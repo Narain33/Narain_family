@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Narain's Family</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#090d16">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3105/3105807.png">
+
+  <!-- Leaflet & PeerJS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #090d16;
+      --card: #131b2e;
+      --card-border: #1f2c47;
+      --accent-blue: #38bdf8;
+      --accent-green: #22c55e;
+      --accent-orange: #f97316;
+      --accent-purple: #a855f7;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); overflow-x: hidden; padding-bottom: 40px; }
+    header { padding: 14px 16px; background: rgba(19,27,46,0.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--card-border); position: sticky; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center; }
+    h1 { font-size: 1.15rem; font-weight: 700; color: var(--accent-blue); }
+    .peer-badge { font-size: 0.72rem; background: #0f172a; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--card-border); color: var(--text-muted); }
+    
+    .grid { display: grid; grid-template-columns: 1fr; gap: 14px; padding: 14px; }
+    .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 16px; }
+    .card-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 8px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+    
+    #map { height: 250px; width: 100%; border-radius: 10px; border: 1px solid var(--card-border); }
+    
+    .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .metric-value { font-size: 1.6rem; font-weight: 800; color: #fff; margin-top: 4px; }
+    .metric-sub { font-size: 0.75rem; color: var(--text-muted); }
+
+    .btn { background: #1e293b; color: #fff; border: 1px solid var(--card-border); padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .btn:active { background: #334155; }
+    .btn-primary { background: #0284c7; border-color: #38bdf8; }
+    .btn-green { background: #15803d; border-color: #22c55e; }
+    .btn-purple { background: #7e22ce; border-color: #a855f7; }
+    .btn-danger { background: #991b1b; border-color: #ef4444; }
+    .btn-recording { background: #b91c1c !important; border-color: #ef4444 !important; animation: pulse 1.2s infinite; }
+
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+    .input-box { width: 100%; padding: 10px; background: #090d16; border: 1px solid var(--card-border); color: #fff; border-radius: 8px; font-size: 0.85rem; margin-top: 8px; outline: none; }
+    
+    /* Reminder List */
+    .reminder-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #0b1120; border: 1px solid var(--card-border); border-radius: 8px; margin-top: 8px; }
+    .reminder-text { font-size: 0.85rem; color: #f1f5f9; font-weight: 500; }
+    .reminder-meta { font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
+    .del-btn { background: transparent; border: none; color: var(--danger); cursor: pointer; font-size: 1rem; padding: 4px 8px; }
+    
+    /* Chat Box */
+    #chatMessages { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; margin-top: 8px; padding-right: 4px; }
+    .chat-bubble { padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; max-width: 80%; word-break: break-word; }
+    .chat-mine { align-self: flex-end; background: #0369a1; color: #fff; }
+    .chat-theirs { align-self: flex-start; background: #1e293b; color: #f1f5f9; border: 1px solid var(--card-border); }
+    .chat-time { font-size: 0.65rem; opacity: 0.7; margin-top: 2px; text-align: right; }
+
+    #installBanner { display: none; background: #1e293b; border: 1px solid var(--accent-blue); padding: 12px; border-radius: 10px; margin: 14px 14px 0 14px; justify-content: space-between; align-items: center; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Narain's Family</h1>
+    <div id="peerStatus" class="peer-badge">Connecting P2P...</div>
+  </header>
+
+  <div id="installBanner">
+    <span style="font-size: 0.82rem; font-weight: 600;">Install Narain's Family on Phone</span>
+    <button class="btn btn-primary" onclick="triggerPWAInstall()">Install</button>
+  </div>
+
+  <div class="grid">
+    <!-- Live Map -->
+    <div class="card">
+      <div class="card-title">
+        <span>Family Live Location (P2P Mesh)</span>
+        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 0.7rem;" onclick="sendSOS()">🚨 SOS Ping</button>
+      </div>
+      <div id="map"></div>
+    </div>
+
+    <!-- Pedometer & Hydration -->
+    <div class="stats-row">
+      <div class="card">
+        <div class="card-title">Walked Today</div>
+        <div id="stepCount" class="metric-value">0</div>
+        <div class="metric-sub" id="walkDist">0.00 km walked</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Hydration Intake</div>
+        <div id="waterIntake" class="metric-value">0 <span style="font-size: 1rem; font-weight: 500;">ml</span></div>
+        <div class="metric-sub">Goal: 2500 ml</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-primary" style="flex: 1;" onclick="logWater(250)">+250 ml Water</button>
+        <button class="btn btn-green" style="flex: 1;" onclick="sendHydrationPing()">Remind Drink</button>
+      </div>
+    </div>
+
+    <!-- P2P Direct Family Messaging -->
+    <div class="card">
+      <div class="card-title">💬 Family P2P Chat</div>
+      <div id="chatMessages">
+        <div class="chat-bubble chat-theirs" style="font-size: 0.75rem; color: var(--text-muted);">Connect to a family member to start chatting directly (serverless).</div>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <input id="chatInput" class="input-box" style="margin-top: 0;" placeholder="Type a family message...">
+        <button class="btn btn-primary" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+
+    <!-- Voice-to-Text & Reminders -->
+    <div class="card">
+      <div class="card-title">🎙️ Voice Note & Reminders</div>
+      <p style="font-size: 0.78rem; color: var(--text-muted);">Tap mic to speak, or type a note and schedule an alarm:</p>
+      
+      <div style="display: flex; gap: 8px; margin-top: 10px;">
+        <button id="micBtn" class="btn btn-purple" style="flex: 1;" onclick="toggleSpeechRecognition()">
+          <span id="micIcon">🎤</span> <span id="micLabel">Speak Note</span>
+        </button>
+      </div>
+
+      <input id="noteTextInput" class="input-box" placeholder="Spoken text appears here...">
+
+      <div style="display: flex; gap: 8px; margin-top: 8px; align-items: center;">
+        <input id="reminderDelayMin" type="number" class="input-box" style="margin-top: 0; width: 120px;" placeholder="Minutes" value="15">
+        <button class="btn btn-primary" style="white-space: nowrap;" onclick="saveVoiceReminder()">Set Reminder</button>
+      </div>
+
+      <div id="remindersContainer" style="margin-top: 10px;"></div>
+    </div>
+
+    <!-- Pairing Panel -->
+    <div class="card">
+      <div class="card-title">Family Member Pairing</div>
+      <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 6px;">
+        Your Peer ID: <b id="myIdDisplay" style="color: var(--accent-blue);">Generating...</b>
+      </p>
+      <input id="targetPeerId" class="input-box" placeholder="Enter other family member's Peer ID">
+      <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="connectToPeer()">Connect Direct Channel</button>
+    </div>
+  </div>
+
+  <script>
+    // 1. Service Worker & PWA Install Engine
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW reg error', err));
+    }
+
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('installBanner').style.display = 'flex';
+    });
+
+    function triggerPWAInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => {
+          document.getElementById('installBanner').style.display = 'none';
+          deferredPrompt = null;
+        });
+      }
+    }
+
+    // 2. Synthesizer Tone Alerts
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(frequency = 587.33, type = "sine", duration = 0.4) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // 3. Voice-to-Text Engine
+    let recognition = null;
+    let isRecording = false;
+
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-IN';
+
+      recognition.onstart = () => {
+        isRecording = true;
+        document.getElementById('micBtn').classList.add('btn-recording');
+        document.getElementById('micLabel').innerText = 'Listening... Speak now';
+      };
+
+      recognition.onresult = (event) => {
+        document.getElementById('noteTextInput').value = event.results[0][0].transcript;
+        playBeep(880, 'triangle', 0.2);
+      };
+
+      recognition.onerror = () => stopMicUI();
+      recognition.onend = () => stopMicUI();
+    }
+
+    function toggleSpeechRecognition() {
+      if (!recognition) return alert('Voice recognition is not supported in this browser engine.');
+      isRecording ? recognition.stop() : recognition.start();
+    }
+
+    function stopMicUI() {
+      isRecording = false;
+      document.getElementById('micBtn').classList.remove('btn-recording');
+      document.getElementById('micLabel').innerText = 'Speak Note';
+    }
+
+    // 4. Voice Reminders & Scheduler
+    let reminders = JSON.parse(localStorage.getItem('narain_reminders') || '[]');
+
+    function renderReminders() {
+      const container = document.getElementById('remindersContainer');
+      container.innerHTML = '';
+      reminders.forEach((r, idx) => {
+        const div = document.createElement('div');
+        div.className = 'reminder-item';
+        div.innerHTML = `
+          <div>
+            <div class="reminder-text">${r.text}</div>
+            <div class="reminder-meta">Alarm at: ${new Date(r.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+          </div>
+          <button class="del-btn" onclick="deleteReminder(${idx})">✕</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function saveVoiceReminder() {
+      const input = document.getElementById('noteTextInput');
+      const text = input.value.trim();
+      const delayMin = parseFloat(document.getElementById('reminderDelayMin').value) || 15;
+      if (!text) return alert('Please enter or record a note first.');
+
+      const alertTime = Date.now() + (delayMin * 60 * 1000);
+      const reminder = { text, timestamp: alertTime };
+      reminders.push(reminder);
+      localStorage.setItem('narain_reminders', JSON.stringify(reminders));
+      input.value = '';
+      renderReminders();
+      scheduleAlarm(reminder);
+    }
+
+    function deleteReminder(idx) {
+      reminders.splice(idx, 1);
+      localStorage.setItem('narain_reminders', JSON.stringify(reminders));
+      renderReminders();
+    }
+
+    function scheduleAlarm(reminder) {
+      const delay = reminder.timestamp - Date.now();
+      if (delay > 0) setTimeout(() => triggerAlarmNotification(reminder.text), delay);
+    }
+
+    function triggerAlarmNotification(text) {
+      playBeep(659.25, 'square', 0.8);
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification("Narain's Family Alert 🔔", { body: text });
+      } else {
+        alert("REMINDER: " + text);
+      }
+    }
+
+    reminders.forEach(r => { if (r.timestamp > Date.now()) scheduleAlarm(r); });
+    renderReminders();
+
+    // 5. Leaflet Map, Live Location & P2P Mesh
+    let map = L.map('map').setView([11.0168, 76.9558], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OSM' }).addTo(map);
+
+    let userMarker, familyMarkers = {};
+    const peer = new Peer();
+    let activeConn = null;
+
+    peer.on('open', (id) => {
+      document.getElementById('peerStatus').innerText = 'Online';
+      document.getElementById('myIdDisplay').innerText = id;
+    });
+
+    peer.on('connection', (conn) => {
+      activeConn = conn;
+      setupConnection(conn);
+    });
+
+    function connectToPeer() {
+      const targetId = document.getElementById('targetPeerId').value.trim();
+      if (!targetId) return;
+      const conn = peer.connect(targetId);
+      setupConnection(conn);
+    }
+
+    function setupConnection(conn) {
+      conn.on('open', () => {
+        document.getElementById('peerStatus').innerText = 'Family Connected';
+        document.getElementById('peerStatus').style.color = '#4ade80';
+        appendChatMsg('System', 'Connected directly to family member!', false);
+      });
+
+      conn.on('data', (data) => {
+        if (data.type === 'LOCATION') {
+          updateMarker(conn.peer, data.lat, data.lng);
+        } else if (data.type === 'CHAT') {
+          appendChatMsg('Family', data.text, false);
+          playBeep(520, 'sine', 0.2);
+        } else if (data.type === 'SOS') {
+          playBeep(880, 'square', 1.2);
+          alert('🚨 EMERGENCY SOS: Family member sent an emergency alert from their location!');
+          if (data.lat && data.lng) updateMarker(conn.peer, data.lat, data.lng);
+        }
+      });
+    }
+
+    function updateMarker(peerId, lat, lng) {
+      if (!familyMarkers[peerId]) {
+        familyMarkers[peerId] = L.marker([lat, lng]).addTo(map).bindPopup("Family Member");
+      } else {
+        familyMarkers[peerId].setLatLng([lat, lng]);
+      }
+    }
+
+    let currentLat = null, currentLng = null;
+    if ('geolocation' in navigator) {
+      navigator.geolocation.watchPosition((pos) => {
+        currentLat = pos.coords.latitude;
+        currentLng = pos.coords.longitude;
+        if (!userMarker) {
+          userMarker = L.marker([currentLat, currentLng]).addTo(map).bindPopup('You are here').openPopup();
+          map.setView([currentLat, currentLng], 15);
+        } else {
+          userMarker.setLatLng([currentLat, currentLng]);
+        }
+        if (activeConn && activeConn.open) {
+          activeConn.send({ type: 'LOCATION', lat: currentLat, lng: currentLng });
+        }
+      }, null, { enableHighAccuracy: true });
+    }
+
+    // 6. Messaging & SOS
+    function sendChat() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      if (!activeConn || !activeConn.open) {
+        alert('Not connected to a family member yet. Connect using their Peer ID below.');
+        return;
+      }
+      activeConn.send({ type: 'CHAT', text: text });
+      appendChatMsg('You', text, true);
+      input.value = '';
+    }
+
+    function sendSOS() {
+      if (!activeConn || !activeConn.open) {
+        return alert('Cannot send SOS: No peer connected.');
+      }
+      activeConn.send({ type: 'SOS', lat: currentLat, lng: currentLng });
+      appendChatMsg('You', '🚨 Sent SOS Alert to family!', true);
+    }
+
+    function appendChatMsg(sender, text, isMine) {
+      const container = document.getElementById('chatMessages');
+      const div = document.createElement('div');
+      div.className = 'chat-bubble ' + (isMine ? 'chat-mine' : 'chat-theirs');
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      div.innerHTML = `<div><b>${sender}:</b> ${text}</div><div class="chat-time">${time}</div>`;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // 7. Step Counter & Hydration
+    let steps = 0, lastMag = 0, water = 0;
+    if (window.DeviceMotionEvent) {
+      window.addEventListener('devicemotion', (e) => {
+        const a = e.accelerationIncludingGravity;
+        if (!a) return;
+        const mag = Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
+        if (Math.abs(mag - lastMag) > 3.2) {
+          steps++;
+          document.getElementById('stepCount').innerText = steps;
+          document.getElementById('walkDist').innerText = (steps * 0.00075).toFixed(2) + ' km walked';
+        }
+        lastMag = mag;
+      });
+    }
+
+    function logWater(amount) {
+      water += amount;
+      document.getElementById('waterIntake').innerHTML = water + ' <span style="font-size: 1rem; font-weight: 500;">ml</span>';
+    }
+
+    function sendHydrationPing() {
+      triggerAlarmNotification('Hydration reminder: Drink a glass of water now 💧');
+    }
+
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+  </script>
+</body>
+</html>
