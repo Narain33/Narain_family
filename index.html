@@ -686,6 +686,31 @@
       display: flex; align-items: center; justify-content: center; gap: 10px;
       margin-top: 10px; cursor: pointer;
     }
+
+    /* Family Code */
+    .family-code-field {
+      width: 100%; margin-top: 4px;
+      background: #090e1a; border: 1px solid var(--card-border);
+      padding: 12px 14px; border-radius: 12px;
+      font-family: 'JetBrains Mono', monospace; font-size: 1rem; font-weight: 600;
+      letter-spacing: 0.08em; text-align: center; text-transform: uppercase;
+      color: #fff; outline: none;
+    }
+    .family-code-field:focus { border-color: var(--cyan-bright); }
+    .family-code-error { min-height: 1.1em; margin-top: 6px; font-size: 0.72rem; color: var(--rose); }
+    .modal-divider { margin: 14px 0 4px; font-size: 0.68rem; color: var(--text-500); text-transform: uppercase; letter-spacing: 0.08em; }
+    .family-code-box { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--card-border); }
+    .family-code-label { font-size: 0.68rem; color: var(--text-400); text-transform: uppercase; letter-spacing: 0.08em; }
+    .family-code-value {
+      font-family: 'JetBrains Mono', monospace; font-size: 1.05rem; font-weight: 700;
+      color: var(--cyan-bright); letter-spacing: 0.08em; margin: 4px 0 8px;
+    }
+    .family-code-actions { display: flex; gap: 8px; }
+    .family-code-actions .role-select-btn { flex: 1; margin-top: 0; padding: 10px; font-size: 0.8rem; }
+    .modal-link-btn {
+      background: none; border: none; color: var(--text-400);
+      font-size: 0.75rem; margin-top: 12px; cursor: pointer; text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -948,19 +973,58 @@
       <button class="role-select-btn" style="border-left:4px solid var(--amber);" onclick="chooseRole('mom')">
         👩 Mom
       </button>
+
+      <div class="family-code-box">
+        <div class="family-code-label">Family code · keep private</div>
+        <div class="family-code-value" id="familyCodeDisplay">—</div>
+        <div class="family-code-actions">
+          <button class="role-select-btn" onclick="shareFamilyCode()">📤 Share</button>
+          <button class="role-select-btn" onclick="changeFamilyCode()">🔁 Change</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Family Code Modal: only phones with the same code can connect -->
+  <div class="modal-shade" id="familyModal">
+    <div class="modal-card">
+      <div style="margin-bottom:6px;"><img src="logo.svg" style="width:48px; height:48px;"></div>
+      <h3 style="font-size:1.15rem; font-weight:800; margin-bottom:4px;">Family code</h3>
+      <p style="font-size:0.75rem; color:var(--text-400); margin-bottom:14px;">Only phones with the same code can see your location and messages. Keep it private.</p>
+
+      <input class="family-code-field" id="familyCodeInput" placeholder="XXXX-XXXX-XXXX" maxlength="20"
+             autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+             onkeydown="if(event.key==='Enter') joinFamilyCode()">
+      <div class="family-code-error" id="familyCodeError"></div>
+      <button class="role-select-btn" style="border-left:4px solid var(--cyan-bright);" onclick="joinFamilyCode()">
+        🔑 Join with this code
+      </button>
+
+      <div class="modal-divider">or, on the first phone only</div>
+      <button class="role-select-btn" style="border-left:4px solid var(--emerald);" onclick="createFamilyCode()">
+        ✨ Create a new family code
+      </button>
+
+      <button class="modal-link-btn" id="familyCancelBtn" style="display:none;" onclick="closeFamilyModal()">Cancel</button>
     </div>
   </div>
 
   <script>
-    // --- 1. FIXED ROLES & CONFIGURATION ---
-    const PEER_PREFIX = 'narains-fam-hub-';
+    // --- 1. FAMILY CODE, ROLES & CONFIGURATION ---
+    // Every peer ID contains a private family code, so only phones that know
+    // the code can find or impersonate a family member on the PeerJS server.
+    const APP_URL = 'https://narain33.github.io/Narain_family/';
+    const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no look-alikes: 0/O, 1/I/L
+    const CODE_LENGTH = 12;
     const ROLES = {
-      narain: { id: PEER_PREFIX + 'narain', name: 'Narain', color: '#38bdf8', nodeClass: 'node-narain' },
-      dad:    { id: PEER_PREFIX + 'dad',    name: 'Dad',    color: '#10b981', nodeClass: 'node-dad' },
-      mom:    { id: PEER_PREFIX + 'mom',    name: 'Mom',    color: '#f59e0b', nodeClass: 'node-mom' }
+      narain: { name: 'Narain', color: '#38bdf8', nodeClass: 'node-narain' },
+      dad:    { name: 'Dad',    color: '#10b981', nodeClass: 'node-dad' },
+      mom:    { name: 'Mom',    color: '#f59e0b', nodeClass: 'node-mom' }
     };
 
-    let userRole = localStorage.getItem('narain_user_role') || 'narain';
+    let familyCode = normalizeFamilyCode(localStorage.getItem('narain_family_code') || '');
+    const storedRole = localStorage.getItem('narain_user_role');
+    let userRole = ROLES[storedRole] ? storedRole : 'narain';
     let activeChatTarget = 'dad';
     let peer = null;
     let peerConns = {};
@@ -992,10 +1056,101 @@
     // --- 3. LIFECYCLE ---
     window.addEventListener('DOMContentLoaded', () => {
       initMap();
-      applyRole(userRole);
       initStepCounter();
       monitorNetworkStatus();
+
+      const linkCode = readCodeFromLink();
+      if (!familyCode) openFamilyModal(linkCode);
+      else if (!storedRole) openProfileModal();
+      else applyRole(userRole);
     });
+
+    // --- FAMILY CODE ---
+    function normalizeFamilyCode(raw) {
+      const chars = String(raw).toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (chars.length !== CODE_LENGTH) return '';
+      for (const ch of chars) if (!CODE_ALPHABET.includes(ch)) return '';
+      return chars.match(/.{4}/g).join('-');
+    }
+
+    function generateFamilyCode() {
+      const n = CODE_ALPHABET.length;
+      const limit = 256 - (256 % n); // reject high bytes so every character is equally likely
+      let out = '';
+      while (out.length < CODE_LENGTH) {
+        for (const b of crypto.getRandomValues(new Uint8Array(32))) {
+          if (b < limit && out.length < CODE_LENGTH) out += CODE_ALPHABET[b % n];
+        }
+      }
+      return normalizeFamilyCode(out);
+    }
+
+    function peerIdFor(role) {
+      return 'narains-fam-' + familyCode.toLowerCase() + '-' + role;
+    }
+
+    // Invite links look like APP_URL#code=XXXX-XXXX-XXXX
+    function readCodeFromLink() {
+      const m = location.hash.match(/code=([A-Za-z0-9-]+)/);
+      if (!m) return '';
+      history.replaceState(null, '', location.pathname + location.search); // remove the code from the address bar
+      return normalizeFamilyCode(m[1]);
+    }
+
+    function openFamilyModal(prefill) {
+      document.getElementById('familyCodeInput').value = prefill || '';
+      document.getElementById('familyCodeError').innerText = '';
+      document.getElementById('familyCancelBtn').style.display = familyCode ? 'inline-block' : 'none';
+      document.getElementById('familyModal').style.display = 'flex';
+    }
+
+    function closeFamilyModal() {
+      document.getElementById('familyModal').style.display = 'none';
+    }
+
+    function joinFamilyCode() {
+      const code = normalizeFamilyCode(document.getElementById('familyCodeInput').value);
+      if (!code) {
+        document.getElementById('familyCodeError').innerText = "That code doesn't look right. It has 12 letters and numbers.";
+        triggerHaptic([80, 40, 80]);
+        return;
+      }
+      setFamilyCode(code);
+    }
+
+    function createFamilyCode() {
+      if (familyCode && !confirm('Create a new code? Every other phone will need the new code to stay connected.')) return;
+      setFamilyCode(generateFamilyCode());
+    }
+
+    function setFamilyCode(code) {
+      familyCode = code;
+      localStorage.setItem('narain_family_code', code);
+      closeFamilyModal();
+      openProfileModal(); // pick who uses this phone; it also shows the code to share
+    }
+
+    function changeFamilyCode() {
+      document.getElementById('profileModal').style.display = 'none';
+      openFamilyModal();
+    }
+
+    async function shareFamilyCode() {
+      if (!familyCode) return;
+      const text = "Join Narain's Family app.\nOpen: " + APP_URL + '#code=' + familyCode +
+                   '\nFamily code: ' + familyCode + '\nKeep this code private.';
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: "Narain's Family", text });
+        } else {
+          await navigator.clipboard.writeText(text);
+          alert('Invite copied. Paste it into WhatsApp for your family.');
+        }
+      } catch (e) {
+        if (e && e.name === 'AbortError') return; // share sheet closed
+        prompt('Copy this invite:', text);
+      }
+    }
 
     function monitorNetworkStatus() {
       const updateNet = () => {
@@ -1013,6 +1168,7 @@
     }
 
     function openProfileModal() {
+      document.getElementById('familyCodeDisplay').innerText = familyCode || '—';
       document.getElementById('profileModal').style.display = 'flex';
     }
 
@@ -1025,7 +1181,8 @@
 
     function applyRole(role) {
       document.getElementById('headerProfileLabel').innerText = ROLES[role].name;
-      initPeerMesh(ROLES[role].id);
+      if (!familyCode) { openFamilyModal(); return; }
+      initPeerMesh(peerIdFor(role));
     }
 
     function setDockActive(el) {
@@ -1118,6 +1275,7 @@
     // --- 5. PEERJS MESH ---
     function initPeerMesh(myId) {
       if (peer) peer.destroy();
+      peerConns = {};
 
       peer = new Peer(myId, {
         debug: 1,
@@ -1127,14 +1285,14 @@
       peer.on('open', () => {
         Object.keys(ROLES).forEach(r => {
           if (r !== userRole) {
-            const conn = peer.connect(ROLES[r].id, { reliable: true });
+            const conn = peer.connect(peerIdFor(r), { reliable: true });
             bindConnEvents(conn, r);
           }
         });
       });
 
       peer.on('connection', conn => {
-        const sender = Object.keys(ROLES).find(k => ROLES[k].id === conn.peer);
+        const sender = Object.keys(ROLES).find(k => peerIdFor(k) === conn.peer);
         if (sender) bindConnEvents(conn, sender);
       });
     }
