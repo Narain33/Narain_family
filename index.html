@@ -20,6 +20,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <!-- Android app only: Capacitor bridge (background location, notifications, reminders). Not loaded on the website. -->
+  <script>if (window.Capacitor && window.Capacitor.isNativePlatform) document.write('<script src="capacitor.js"><\/script>');</script>
 
   <style>
     :root {
@@ -57,7 +59,7 @@
       color: var(--text-100);
       min-height: 100vh;
       overflow-x: hidden;
-      padding-bottom: 96px;
+      padding-bottom: 124px;
     }
 
     .app-screen {
@@ -195,7 +197,21 @@
       z-index: 500;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
+    }
+    /* Map actions: big, labelled buttons */
+    .map-action-btn {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+      width: 64px; height: 58px; border-radius: 16px;
+      background: rgba(14, 22, 40, 0.92); border: 1px solid var(--card-border);
+      color: #fff; font-size: 0.64rem; font-weight: 800; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+    }
+    .map-action-icon { font-size: 1.45rem; line-height: 1; }
+    .map-action-btn.sos {
+      background: linear-gradient(135deg, #b91c1c, #ef4444); border-color: #fca5a5;
+      font-size: 0.78rem; letter-spacing: 0.06em;
+      box-shadow: 0 0 18px rgba(239, 68, 68, 0.55);
     }
     .map-btn-circle {
       width: 32px;
@@ -442,6 +458,18 @@
       animation: recordGlow 1s infinite;
     }
     @keyframes recordGlow { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+    /* Hold-to-talk: no scrolling, text selection or long-press menu while holding */
+    .hold-to-talk-badge { touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+    .voice-bubble audio { display: block; width: 210px; max-width: 100%; height: 34px; margin-top: 4px; }
+
+    /* In-app alert */
+    .app-toast {
+      position: fixed; left: 50%; bottom: 124px; transform: translateX(-50%);
+      z-index: 2500; width: calc(100% - 32px); max-width: 360px;
+      background: #0e1628; border: 1px solid var(--cyan-bright); border-radius: 14px;
+      padding: 12px 14px; font-size: 0.82rem; font-weight: 600; color: #fff;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6); display: none; cursor: pointer;
+    }
 
     /* Quick Check-in Chips */
     .quick-chips-row {
@@ -543,6 +571,11 @@
       outline: none;
     }
     .comms-field:focus { border-color: var(--cyan-bright); }
+    .comms-mic-btn {
+      width: 40px; height: 40px; flex: none; border-radius: 12px;
+      background: #090e1a; border: 1px solid var(--card-border);
+      font-size: 1.1rem; cursor: pointer;
+    }
     .comms-send-btn {
       background: #0284c7;
       border: 1px solid var(--cyan-bright);
@@ -637,26 +670,39 @@
       flex-direction: column;
       align-items: center;
       gap: 2px;
-      color: var(--text-500);
-      font-size: 0.62rem;
-      font-weight: 600;
+      color: var(--text-400);
+      font-size: 0.7rem;
+      font-weight: 700;
       cursor: pointer;
       text-decoration: none;
-      padding: 4px 8px;
+      padding: 4px 6px;
+      min-width: 52px;
       border-radius: 999px;
     }
     .bottom-nav-item.active { color: var(--cyan-bright); }
-    .bottom-nav-icon { font-size: 1.1rem; }
+    .bottom-nav-icon { font-size: 1.55rem; line-height: 1.1; }
+
+    /* Walkie-talkie: big raised button in the middle of the bottom bar */
+    .ptt-dock { display: flex; flex-direction: column; align-items: center; gap: 3px; margin-top: -30px; }
+    .ptt-label { font-size: 0.66rem; font-weight: 800; color: #fdba74; white-space: nowrap; }
+    .center-mic-btn.recording {
+      background: linear-gradient(135deg, #b91c1c, #ef4444);
+      box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.3), 0 4px 20px rgba(239, 68, 68, 0.7);
+      transform: scale(1.08);
+      animation: recordGlow 1s infinite;
+    }
     .center-mic-btn {
-      width: 44px;
-      height: 44px;
+      touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+      transition: transform 0.15s;
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
       background: linear-gradient(135deg, #ea580c, #f97316);
-      border: 2px solid #fff;
+      border: 3px solid #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.2rem;
+      font-size: 1.9rem;
       color: #fff;
       box-shadow: 0 4px 16px rgba(249, 115, 22, 0.5);
       cursor: pointer;
@@ -686,6 +732,16 @@
       display: flex; align-items: center; justify-content: center; gap: 10px;
       margin-top: 10px; cursor: pointer;
     }
+
+    /* Map tiles: turn the light OpenStreetMap style into a dark map */
+    .dark-tiles { filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%); }
+
+    /* Errands: synced list */
+    .errand-remove {
+      background: none; border: none; color: var(--text-500);
+      font-size: 0.85rem; margin-left: 8px; cursor: pointer; padding: 2px 4px;
+    }
+    .errand-empty, .chat-empty { font-size: 0.75rem; color: var(--text-500); padding: 10px 2px; }
 
     /* Family Code */
     .family-code-field {
@@ -725,7 +781,7 @@
       </div>
       <div class="header-right">
         <div class="status-badge" onclick="openProfileModal()">
-          <span id="headerProfileLabel">Narain</span> <span>• Active</span>
+          <span id="headerProfileLabel">Choose profile</span>
         </div>
       </div>
     </div>
@@ -736,18 +792,20 @@
         <div class="section-title">
           <span class="title-dot"></span> LIVE FAMILY RADAR & SPEED
         </div>
-        <div id="netStatusPill" class="badge-pill" style="font-size:0.6rem;">
-          Mesh Active 🟢
-        </div>
+        <div id="netStatusPill" class="badge-pill" style="font-size:0.6rem;"></div>
       </div>
 
       <!-- Map Viewport -->
       <div class="map-wrapper">
         <div id="map"></div>
-        <div class="map-overlay-badge">Coimbatore Metro • 3 Connected</div>
+        <div class="map-overlay-badge" id="meshBadge">Not connected</div>
         <div class="map-controls-overlay">
-          <button class="map-btn-circle" onclick="setHomeCoordinates()">📍</button>
-          <button class="map-btn-circle" style="color:var(--rose);" onclick="sendEmergencySOS()">🚨</button>
+          <button class="map-action-btn" onclick="setHomeCoordinates()" aria-label="Set Home to where I am now">
+            <span class="map-action-icon">🏠</span><span>Set Home</span>
+          </button>
+          <button class="map-action-btn sos" onclick="sendEmergencySOS()" aria-label="Send emergency SOS to family">
+            <span class="map-action-icon">🚨</span><span>SOS</span>
+          </button>
         </div>
       </div>
 
@@ -757,39 +815,39 @@
         <div class="telem-box">
           <div class="telem-head">
             <span style="color:var(--cyan-bright);">Narain</span>
-            <span style="font-size:0.6rem; color:#10b981;">🔋 88%</span>
+            <span style="font-size:0.6rem; color:#10b981;" id="battery-narain">🔋 --</span>
           </div>
-          <div class="telem-val" id="speed-narain">0.0 <span>km/h</span></div>
-          <div class="telem-state" id="state-narain">Resting</div>
-          <div class="telem-loc-badge" id="zone-narain">🏠 At Home</div>
+          <div class="telem-val" id="speed-narain">-- <span>km/h</span></div>
+          <div class="telem-state" id="state-narain">Offline</div>
+          <div class="telem-loc-badge" id="zone-narain">—</div>
         </div>
 
         <!-- Dad -->
         <div class="telem-box">
           <div class="telem-head">
             <span style="color:var(--emerald);">Dad</span>
-            <span style="font-size:0.6rem; color:#10b981;">🔋 74%</span>
+            <span style="font-size:0.6rem; color:#10b981;" id="battery-dad">🔋 --</span>
           </div>
-          <div class="telem-val" id="speed-dad">34 <span>km/h</span></div>
-          <div class="telem-state" id="state-dad">In Transit</div>
-          <div class="telem-loc-badge green" id="zone-dad">🛣️ Grand Trunk Rd</div>
+          <div class="telem-val" id="speed-dad">-- <span>km/h</span></div>
+          <div class="telem-state" id="state-dad">Offline</div>
+          <div class="telem-loc-badge green" id="zone-dad">—</div>
         </div>
 
         <!-- Mom -->
         <div class="telem-box">
           <div class="telem-head">
             <span style="color:var(--amber);">Mom</span>
-            <span style="font-size:0.6rem; color:#10b981;">🔋 91%</span>
+            <span style="font-size:0.6rem; color:#10b981;" id="battery-mom">🔋 --</span>
           </div>
-          <div class="telem-val" id="speed-mom">0.0 <span>km/h</span></div>
-          <div class="telem-state" id="state-mom">Idle</div>
-          <div class="telem-loc-badge" id="zone-mom">🏢 Tech Park Office</div>
+          <div class="telem-val" id="speed-mom">-- <span>km/h</span></div>
+          <div class="telem-state" id="state-mom">Offline</div>
+          <div class="telem-loc-badge" id="zone-mom">—</div>
         </div>
       </div>
 
       <!-- Status Mood Pills (Feature 1) -->
       <div class="mood-row">
-        <div class="mood-chip selected" onclick="setMyMood(this, 'At Home 🏠')">At Home 🏠</div>
+        <div class="mood-chip" onclick="setMyMood(this, 'At Home 🏠')">At Home 🏠</div>
         <div class="mood-chip" onclick="setMyMood(this, 'Driving 🚗')">Driving 🚗</div>
         <div class="mood-chip" onclick="setMyMood(this, 'In Meeting 💼')">In Meeting 💼</div>
         <div class="mood-chip" onclick="setMyMood(this, 'Free to Talk 📞')">Free to Talk 📞</div>
@@ -803,9 +861,7 @@
         <div class="section-title">
           <span class="title-dot green"></span> DAILY HEALTH & HYDRATION
         </div>
-        <div class="badge-pill green">
-          Target: 60% Reached
-        </div>
+        <div class="badge-pill green" id="waterGoalBadge"></div>
       </div>
 
       <div class="health-stats-row">
@@ -814,8 +870,8 @@
             <span>Walked Today</span>
             <span>🏃</span>
           </div>
-          <div class="stat-tile-num" id="walkStepsCount">5,240</div>
-          <div class="stat-tile-sub" id="walkDistKm">3.82 km walked</div>
+          <div class="stat-tile-num" id="walkStepsCount">0</div>
+          <div class="stat-tile-sub" id="walkDistKm">0.00 km walked</div>
         </div>
 
         <div class="stat-tile">
@@ -823,8 +879,8 @@
             <span>Hydration Intake</span>
             <span>💧</span>
           </div>
-          <div class="stat-tile-num" id="waterAmount">1,500 <span style="font-size:0.85rem; font-weight:500;">ml</span></div>
-          <div class="stat-tile-sub">Daily Goal: 2,500 ml</div>
+          <div class="stat-tile-num" id="waterAmount">0 <span style="font-size:0.85rem; font-weight:500;">ml</span></div>
+          <div class="stat-tile-sub" id="waterGoalTxt" style="cursor:pointer;" onclick="editWaterGoal()"></div>
         </div>
       </div>
 
@@ -844,9 +900,7 @@
         <div class="section-title">
           <span class="title-dot purple"></span> FAMILY COMMS & RADIO
         </div>
-        <div class="hold-to-talk-badge" id="pttBadge" onmousedown="startPTT()" onmouseup="stopPTT()" ontouchstart="startPTT()" ontouchend="stopPTT()">
-          <span>🎙️</span> Hold to Talk
-        </div>
+        <div class="hold-to-talk-badge" style="cursor:default; white-space:nowrap;" title="Walkie-talkie: hold the orange button at the bottom">🎙️ Hold ⬇ to talk</div>
       </div>
 
       <!-- Quick Check-in Chips (Feature 2) -->
@@ -857,44 +911,13 @@
         <div class="quick-chip" onclick="sendQuickCheckin('Need groceries 🛒')">Need groceries 🛒</div>
       </div>
 
-      <div class="tab-pills-row">
-        <button class="tab-btn" id="chat-tab-group" onclick="selectChatTab('group')">👥 Group (3)</button>
-        <button class="tab-btn active" id="chat-tab-dad" onclick="selectChatTab('dad')">Dad •</button>
-        <button class="tab-btn" id="chat-tab-mom" onclick="selectChatTab('mom')">Mom</button>
-      </div>
+      <div class="tab-pills-row" id="chatTabs"></div>
 
-      <div class="chat-stream-box" id="chatStream">
-        <div class="msg-bubble theirs">
-          Stopping by the organic grocer. Do we need anything extra?
-          <div class="msg-time">10:44 AM</div>
-        </div>
-        
-        <div class="msg-bubble theirs" style="background:#131c31; border: 1px solid var(--card-border);">
-          <div style="font-size:0.7rem; color:var(--text-400); margin-bottom:3px;">🎙️ Voice Dispatch • 0:14</div>
-          <div class="audio-pill" onclick="simulatePlayVoice()">
-            <span>▶️</span>
-            <div class="waveform-bars">
-              <span style="height:6px;"></span>
-              <span style="height:12px;"></span>
-              <span style="height:14px;"></span>
-              <span style="height:8px;"></span>
-              <span style="height:11px;"></span>
-              <span style="height:14px;"></span>
-              <span style="height:7px;"></span>
-            </div>
-            <span style="font-size:0.65rem; color:#cbd5e1; margin-left:auto;">0:14</span>
-          </div>
-          <div class="msg-time">10:45 AM</div>
-        </div>
-
-        <div class="msg-bubble mine">
-          Added Almond Milk and Apples to the checklist!
-          <div class="msg-time">10:46 AM</div>
-        </div>
-      </div>
+      <div class="chat-stream-box" id="chatStream"></div>
 
       <div class="comms-input-row">
-        <input class="comms-field" id="commsInput" placeholder="Send quick message to Dad..." onkeydown="if(event.key==='Enter') sendCommsMessage()">
+        <input class="comms-field" id="commsInput" placeholder="Message the family..." onkeydown="if(event.key==='Enter') sendCommsMessage()">
+        <button class="comms-mic-btn" id="voiceTypeBtn" onclick="quickVoiceNotePrompt()" aria-label="Speak to type a message">🎤</button>
         <button class="comms-send-btn" onclick="sendCommsMessage()">Send</button>
       </div>
     </div>
@@ -905,7 +928,7 @@
         <div class="section-title">
           <span class="title-dot"></span> SHARED ERRANDS & GROCERIES
         </div>
-        <span style="font-size:0.62rem; color:var(--text-400);">Live synced across 3 family phones</span>
+        <span style="font-size:0.62rem; color:var(--text-400);">Syncs with family when online</span>
       </div>
 
       <div class="errands-input-row">
@@ -913,23 +936,7 @@
         <button class="errands-add-btn" onclick="appendErrand()">+ Add</button>
       </div>
 
-      <div id="errandsListContainer" style="margin-top:10px;">
-        <div class="errand-item">
-          <input type="checkbox" style="accent-color:var(--emerald);">
-          <span class="errand-item-title">Organic Honey Crisp Apples (6x)</span>
-          <span class="errand-tag">Dad Pick up ✕</span>
-        </div>
-        <div class="errand-item">
-          <input type="checkbox" style="accent-color:var(--emerald);">
-          <span class="errand-item-title">Unsweetened Almond Milk (2L)</span>
-          <span class="errand-tag">Dad Pick up ✕</span>
-        </div>
-        <div class="errand-item">
-          <input type="checkbox" checked style="accent-color:var(--emerald);">
-          <span class="errand-item-title" style="text-decoration:line-through; opacity:0.5;">Medication refill from Apollo</span>
-          <span class="errand-tag done">Completed</span>
-        </div>
-      </div>
+      <div id="errandsListContainer" style="margin-top:10px;"></div>
     </div>
 
   </div>
@@ -938,14 +945,17 @@
   <div class="bottom-bar">
     <a href="#radar-section" class="bottom-nav-item active" onclick="setDockActive(this)">
       <span class="bottom-nav-icon">🗺️</span>
-      <span>Radar</span>
+      <span>Map</span>
     </a>
     <a href="#comms-section" class="bottom-nav-item" onclick="setDockActive(this)">
       <span class="bottom-nav-icon">💬</span>
-      <span>Comms</span>
+      <span>Chat</span>
     </a>
-    <div class="center-mic-btn" onclick="quickVoiceNotePrompt()">
-      🎙️
+    <!-- Walkie-talkie: hold, speak, release. Goes to the selected chat tab (Family or one person). -->
+    <div class="ptt-dock">
+      <div class="center-mic-btn" id="pttBtn" onpointerdown="startPTT(event)" onpointerup="stopPTT()"
+           onpointercancel="stopPTT()" oncontextmenu="return false" aria-label="Hold to talk">🎙️</div>
+      <span class="ptt-label" id="pttLabel">Hold to talk</span>
     </div>
     <a href="#health-section" class="bottom-nav-item" onclick="setDockActive(this)">
       <span class="bottom-nav-icon">❤️</span>
@@ -956,6 +966,9 @@
       <span>Errands</span>
     </a>
   </div>
+
+  <!-- In-app alerts (water reminders, home arrivals) -->
+  <div class="app-toast" id="appToast" onclick="this.style.display='none'"></div>
 
   <!-- Profile Switcher Modal -->
   <div class="modal-shade" id="profileModal">
@@ -1010,10 +1023,10 @@
   </div>
 
   <script>
-    // --- 1. FAMILY CODE, ROLES & CONFIGURATION ---
-    // Every peer ID contains a private family code, so only phones that know
-    // the code can find or impersonate a family member on the PeerJS server.
-    const APP_URL = 'https://narain33.github.io/Narain_family/';
+    // --- 1. FAMILY CODE, ROLES & STATE ---
+    // The only fixed values are the peer IDs: "narains-fam-<family code>-<role>".
+    // The family code is private, so only phones that know it can connect.
+    // Everything shown on screen comes from this phone or from family phones.
     const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no look-alikes: 0/O, 1/I/L
     const CODE_LENGTH = 12;
     const ROLES = {
@@ -1022,17 +1035,36 @@
       mom:    { name: 'Mom',    color: '#f59e0b', nodeClass: 'node-mom' }
     };
 
+    // --- ANDROID APP ---
+    // The same page runs as the website and inside the Android app. In the app, location runs as a
+    // background service, alerts become phone notifications and drink reminders become phone alarms.
+    const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform &&
+                      window.Capacitor.isNativePlatform() && window.Capacitor.registerPlugin);
+    const nativePlugin = name => (NATIVE ? window.Capacitor.registerPlugin(name) : null);
+    const BgGeo = nativePlugin('BackgroundGeolocation');
+    const LocalNotif = nativePlugin('LocalNotifications');
+    const FamilyNative = nativePlugin('FamilyNative');
+    const NativeShare = nativePlugin('Share');
+    const NativeDevice = nativePlugin('Device');
+    const REMINDER_NOTIF_ID = 1;
+    let notifCounter = 0;
+
     let familyCode = normalizeFamilyCode(localStorage.getItem('narain_family_code') || '');
     const storedRole = localStorage.getItem('narain_user_role');
     let userRole = ROLES[storedRole] ? storedRole : 'narain';
-    let activeChatTarget = 'dad';
+    let activeChatTarget = 'group';
     let peer = null;
-    let peerConns = {};
+    let peerConns = {};   // role -> connection used for sending
+    const links = {};     // role -> Set of open connections (both phones dial, so there can be two)
 
-    let currentLat = 11.0168, currentLng = 76.9558;
-    let homeCoords = JSON.parse(localStorage.getItem('narain_home_coords') || 'null');
-    let waterMl = 1500;
-    let reminderActive = true;
+    let currentLat = null, currentLng = null, currentSpeed = null;
+    let homeCoords = loadHome();   // shared with family: { lat, lng, updated }
+    const atHome = {};             // role -> last known inside/outside home
+    let myMood = localStorage.getItem('narain_mood') || '';
+    let myBattery = null;
+    let waterGoalMl = Number(localStorage.getItem('narain_water_goal')) || 2500;
+    let reminder = loadReminder(); // { on, everyMin }
+    let errands = loadErrands();
 
     // --- 2. AUDIO SYNTH & HAPTIC VIBRATION ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1053,17 +1085,110 @@
       if ('vibrate' in navigator) navigator.vibrate(pattern);
     }
 
+    function setText(id, text) {
+      const el = document.getElementById(id);
+      if (el) el.innerText = text;
+    }
+
+    function nowTime() {
+      return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // --- ALERTS: in-app banner + sound + vibration, and a phone notification when the app is in the background ---
+    let toastTimer = null;
+    function showToast(text) {
+      const t = document.getElementById('appToast');
+      t.innerText = text;
+      t.style.display = 'block';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { t.style.display = 'none'; }, 8000);
+    }
+
+    async function notify(title, body) {
+      beep(760, 0.4);
+      triggerHaptic([120, 60, 120]);
+      showToast(title + (body ? '\n' + body : ''));
+      notifyIfAway(title, body);
+    }
+
+    // Phone notification, only when the app isn't on screen (no banner/sound inside the app).
+    async function notifyIfAway(title, body) {
+      if (document.visibilityState === 'visible') return;
+      try {
+        if (NATIVE) {
+          notifCounter = (notifCounter + 1) % 1000;
+          await LocalNotif.schedule({ notifications: [{
+            id: 1000 + (Math.floor(Date.now() / 1000) % 1000000) * 1000 + notifCounter,
+            title, body: body || '', smallIcon: 'ic_stat_family', iconColor: '#38BDF8'
+          }] });
+        } else if ('Notification' in window && Notification.permission === 'granted' && navigator.serviceWorker) {
+          const reg = await navigator.serviceWorker.getRegistration();
+          if (reg) reg.showNotification(title, { body: body || '', icon: 'logo.svg', tag: title });
+        }
+      } catch (e) {}
+    }
+
+    function askNotificationPermission() {
+      if (NATIVE) { LocalNotif.requestPermissions().catch(() => {}); return; }
+      if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
+    }
+
+    // Android kills background apps to save battery. Ask (at most once a week) to be left out of that.
+    async function askBatteryExemption() {
+      if (!NATIVE) return;
+      try {
+        const { value } = await FamilyNative.isIgnoringBatteryOptimizations();
+        const lastAsked = Number(localStorage.getItem('narain_battery_asked')) || 0;
+        if (value || Date.now() - lastAsked < 7 * 24 * 3600 * 1000) return;
+        localStorage.setItem('narain_battery_asked', String(Date.now()));
+        if (confirm('To keep sharing location and alerts when the app is closed or the screen is off, ' +
+                    'allow Narain\'s Family to run in the background.\n\nOn the next screen, tap "Allow".')) {
+          await FamilyNative.requestIgnoreBatteryOptimizations();
+        }
+      } catch (e) {}
+    }
+
     // --- 3. LIFECYCLE ---
     window.addEventListener('DOMContentLoaded', () => {
       initMap();
       initStepCounter();
+      initBattery();
       monitorNetworkStatus();
+      renderHealth();
+      renderReminder();
+      renderErrands();
+      renderChatTabs();
+      renderChatEmpty();
+      refreshPresence();
+
+      // Service worker: lets the app open offline and show notifications on Android.
+      if (!NATIVE && 'serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+      // Voice typing needs Chrome's speech service (not available inside the Android app; use the keyboard mic there).
+      if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) document.getElementById('voiceTypeBtn').style.display = 'none';
+      setInterval(checkReminder, 30000);
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkReminder(); });
 
       const linkCode = readCodeFromLink();
       if (!familyCode) openFamilyModal(linkCode);
       else if (!storedRole) openProfileModal();
       else applyRole(userRole);
     });
+
+    function monitorNetworkStatus() {
+      const updateNet = () => {
+        const pill = document.getElementById('netStatusPill');
+        if (navigator.onLine) {
+          pill.innerText = 'Online 🟢';
+          pill.style.color = 'var(--cyan-bright)';
+        } else {
+          pill.innerText = 'Offline 🔴';
+          pill.style.color = 'var(--rose)';
+        }
+      };
+      updateNet();
+      window.addEventListener('online', updateNet);
+      window.addEventListener('offline', updateNet);
+    }
 
     // --- FAMILY CODE ---
     function normalizeFamilyCode(raw) {
@@ -1089,12 +1214,18 @@
       return 'narains-fam-' + familyCode.toLowerCase() + '-' + role;
     }
 
-    // Invite links look like APP_URL#code=XXXX-XXXX-XXXX
+    // Invite links are "<this page's address>#code=XXXX-XXXX-XXXX"
     function readCodeFromLink() {
       const m = location.hash.match(/code=([A-Za-z0-9-]+)/);
       if (!m) return '';
       history.replaceState(null, '', location.pathname + location.search); // remove the code from the address bar
       return normalizeFamilyCode(m[1]);
+    }
+
+    // The page's own web address, or '' when it isn't a shareable web address (e.g. inside the Android app).
+    function shareableAppLink() {
+      const local = ['localhost', '127.0.0.1', ''].includes(location.hostname);
+      return /^https?:$/.test(location.protocol) && !local ? location.origin + location.pathname : '';
     }
 
     function openFamilyModal(prefill) {
@@ -1137,10 +1268,14 @@
 
     async function shareFamilyCode() {
       if (!familyCode) return;
-      const text = "Join Narain's Family app.\nOpen: " + APP_URL + '#code=' + familyCode +
-                   '\nFamily code: ' + familyCode + '\nKeep this code private.';
+      const link = shareableAppLink();
+      const text = "Join Narain's Family app.\n" +
+                   (link ? 'Open: ' + link + '#code=' + familyCode + '\n' : '') +
+                   'Family code: ' + familyCode + '\nKeep this code private.';
       try {
-        if (navigator.share) {
+        if (NATIVE) {
+          await NativeShare.share({ title: "Narain's Family", text, dialogTitle: 'Send the family code' });
+        } else if (navigator.share) {
           await navigator.share({ title: "Narain's Family", text });
         } else {
           await navigator.clipboard.writeText(text);
@@ -1152,21 +1287,7 @@
       }
     }
 
-    function monitorNetworkStatus() {
-      const updateNet = () => {
-        const pill = document.getElementById('netStatusPill');
-        if (navigator.onLine) {
-          pill.innerText = 'Mesh Active 🟢';
-          pill.style.color = 'var(--cyan-bright)';
-        } else {
-          pill.innerText = 'Offline 🔴';
-          pill.style.color = 'var(--rose)';
-        }
-      };
-      window.addEventListener('online', updateNet);
-      window.addEventListener('offline', updateNet);
-    }
-
+    // --- PROFILE ---
     function openProfileModal() {
       document.getElementById('familyCodeDisplay').innerText = familyCode || '—';
       document.getElementById('profileModal').style.display = 'flex';
@@ -1180,9 +1301,31 @@
     }
 
     function applyRole(role) {
-      document.getElementById('headerProfileLabel').innerText = ROLES[role].name;
+      setText('headerProfileLabel', ROLES[role].name);
+      resetFamilyBoxes();
+      renderChatTabs();
       if (!familyCode) { openFamilyModal(); return; }
       initPeerMesh(peerIdFor(role));
+      askBatteryExemption();
+    }
+
+    // Clear everything shown about family members, then show this phone's own data.
+    function resetFamilyBoxes() {
+      Object.keys(ROLES).forEach(r => {
+        setSpeed(r, null);
+        setBattery(r, null);
+        setText('zone-' + r, '—');
+      });
+      Object.values(markers).forEach(m => m.remove());
+      markers = {};
+      Object.keys(atHome).forEach(k => delete atHome[k]);
+      setBattery(userRole, myBattery);
+      restoreMood();
+      if (currentLat !== null) {
+        setSpeed(userRole, currentSpeed);
+        addNodeMarker(userRole, currentLat, currentLng, currentSpeed + ' km/h');
+      }
+      refreshPresence();
     }
 
     function setDockActive(el) {
@@ -1190,62 +1333,145 @@
       el.classList.add('active');
     }
 
+    // --- TELEMETRY BOXES ---
+    function setSpeed(role, speed) {
+      const el = document.getElementById('speed-' + role);
+      if (!el) return;
+      el.textContent = (speed === null ? '--' : speed) + ' ';
+      const unit = document.createElement('span');
+      unit.textContent = 'km/h';
+      el.appendChild(unit);
+    }
+
+    function setBattery(role, level) {
+      const n = Number(level);
+      const known = level !== null && level !== undefined && isFinite(n) && n >= 0 && n <= 100;
+      setText('battery-' + role, known ? '🔋 ' + Math.round(n) + '%' : '🔋 --');
+    }
+
+    function refreshPresence() {
+      const all = Object.keys(ROLES);
+      let online = 0;
+      all.forEach(r => {
+        if (r === userRole) { setText('state-' + r, 'This phone'); return; }
+        const on = !!(peerConns[r] && peerConns[r].open);
+        if (on) online++;
+        setText('state-' + r, on ? 'Online' : 'Offline');
+      });
+      let badge = 'Not connected';
+      if (peer && peer.open) badge = (online + 1) + ' of ' + all.length + ' online';
+      else if (peer) badge = 'Connecting…';
+      setText('meshBadge', badge);
+    }
+
     // Status Mood Pill Selection
     function setMyMood(el, moodText) {
-      document.querySelectorAll('.mood-chip').forEach(c => c.classList.remove('selected'));
-      el.classList.add('selected');
+      myMood = moodText;
+      localStorage.setItem('narain_mood', moodText);
+      restoreMood();
       triggerHaptic([30]);
-      document.getElementById('zone-' + userRole).innerText = moodText;
-      broadcastData({ type: 'STATUS_MOOD', role: userRole, mood: moodText });
+      broadcastData({ type: 'STATUS_MOOD', mood: moodText });
+    }
+
+    function restoreMood() {
+      document.querySelectorAll('.mood-chip').forEach(c => c.classList.toggle('selected', c.innerText.trim() === myMood));
+      setText('zone-' + userRole, myMood || '—');
+    }
+
+    function initBattery() {
+      const report = level => {
+        const pct = Math.round(level * 100);
+        if (pct === myBattery) return;
+        myBattery = pct;
+        setBattery(userRole, myBattery);
+        broadcastData({ type: 'BATTERY', level: myBattery });
+      };
+      if (navigator.getBattery) {
+        navigator.getBattery().then(b => {
+          report(b.level);
+          b.addEventListener('levelchange', () => report(b.level));
+        }).catch(() => {});
+      } else if (NATIVE) {
+        const poll = () => NativeDevice.getBatteryInfo().then(i => { if (isFinite(i.batteryLevel)) report(i.batteryLevel); }).catch(() => {});
+        poll();
+        setInterval(poll, 120000);
+      }
     }
 
     // --- 4. LEAFLET MAP ---
-    let map, markers = {};
+    let map, markers = {}, homeCircle = null;
 
     function initMap() {
-      map = L.map('map', { zoomControl: false }).setView([currentLat, currentLng], 14);
+      map = L.map('map', { zoomControl: false });
+      if (homeCoords) map.setView([homeCoords.lat, homeCoords.lng], 15);
+      else map.fitWorld();
 
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19
+      // OpenStreetMap tiles: free, no API key. Darkened with CSS (.dark-tiles) to match the app.
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        className: 'dark-tiles',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
       }).addTo(map);
 
-      addNodeMarker('narain', currentLat, currentLng, 'Geodesic Home');
-      addNodeMarker('dad', currentLat + 0.012, currentLng + 0.014, '34 km/h');
-      addNodeMarker('mom', currentLat - 0.008, currentLng + 0.018, 'Mom (Office)');
+      if (homeCoords) drawHomeCircle();
 
-      if ('geolocation' in navigator) {
-        navigator.geolocation.watchPosition(pos => {
-          currentLat = pos.coords.latitude;
-          currentLng = pos.coords.longitude;
-          const speed = pos.coords.speed ? (pos.coords.speed * 3.6).toFixed(1) : '0.0';
-          
-          document.getElementById('speed-' + userRole).innerHTML = speed + ' <span>km/h</span>';
-          addNodeMarker(userRole, currentLat, currentLng, speed + ' km/h');
-
-          broadcastData({
-            type: 'TELEMETRY',
-            role: userRole,
-            lat: currentLat,
-            lng: currentLng,
-            speed: speed
-          });
-        }, null, { enableHighAccuracy: true });
+      if (NATIVE) {
+        startNativeLocation();
+      } else if ('geolocation' in navigator) {
+        navigator.geolocation.watchPosition(
+          pos => onMyPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.speed),
+          null, { enableHighAccuracy: true });
       }
+    }
+
+    let mapCentered = false;
+    function onMyPosition(lat, lng, speedMs) {
+      currentLat = lat;
+      currentLng = lng;
+      currentSpeed = speedMs ? (speedMs * 3.6).toFixed(1) : '0.0';
+      if (!mapCentered) { map.setView([currentLat, currentLng], 15); mapCentered = true; }
+
+      setSpeed(userRole, currentSpeed);
+      addNodeMarker(userRole, currentLat, currentLng, currentSpeed + ' km/h');
+      broadcastData(myTelemetry());
+    }
+
+    // Android app: location keeps coming while the app is in the background (shown as a
+    // "Sharing your location with family" notification), so family connections stay alive too.
+    async function startNativeLocation() {
+      try { await LocalNotif.requestPermissions(); } catch (e) {} // Android 13+ needs this to show that notification
+      BgGeo.addWatcher({
+        backgroundTitle: "Narain's Family",
+        backgroundMessage: 'Sharing your location with family',
+        requestPermissions: true,
+        stale: false,
+        distanceFilter: 10
+      }, (location, error) => {
+        if (error) {
+          if (error.code === 'NOT_AUTHORIZED' &&
+              confirm('Location permission is needed to share your location with family. Open settings?')) {
+            BgGeo.openSettings();
+          }
+          return;
+        }
+        if (location) onMyPosition(location.latitude, location.longitude, location.speed);
+      });
+    }
+
+    function myTelemetry() {
+      return { type: 'TELEMETRY', lat: currentLat, lng: currentLng, speed: currentSpeed };
     }
 
     function addNodeMarker(role, lat, lng, tag) {
       const meta = ROLES[role];
-      const icon = L.divIcon({
-        className: 'custom-icon',
-        html: `
-          <div class="map-avatar-node ${meta.nodeClass}">
-            ${meta.name[0]}
-            <div class="node-tag">${tag}</div>
-          </div>
-        `,
-        iconSize: [38, 38],
-        iconAnchor: [19, 19]
-      });
+      const node = document.createElement('div');
+      node.className = 'map-avatar-node ' + meta.nodeClass;
+      node.textContent = meta.name[0];
+      const label = document.createElement('div');
+      label.className = 'node-tag';
+      label.textContent = tag;
+      node.appendChild(label);
+      const icon = L.divIcon({ className: 'custom-icon', html: node.outerHTML, iconSize: [38, 38], iconAnchor: [19, 19] });
 
       if (!markers[role]) {
         markers[role] = L.marker([lat, lng], { icon }).addTo(map);
@@ -1255,39 +1481,90 @@
       }
     }
 
-    function setHomeCoordinates() {
-      homeCoords = { lat: currentLat, lng: currentLng };
-      localStorage.setItem('narain_home_coords', JSON.stringify(homeCoords));
-      L.circle([currentLat, currentLng], {
+    function drawHomeCircle() {
+      if (homeCircle) homeCircle.remove();
+      homeCircle = L.circle([homeCoords.lat, homeCoords.lng], {
         color: '#38bdf8', fillColor: '#38bdf8', fillOpacity: 0.15, radius: 150
       }).addTo(map);
+    }
+
+    // --- HOME & ARRIVE/LEAVE ALERTS ---
+    // Home is shared with the family. Each phone watches the others' locations
+    // and alerts its user when someone crosses the home circle.
+    const HOME_ENTER_M = 150;  // the circle drawn on the map
+    const HOME_EXIT_M = 200;   // a little wider, so GPS jitter at the edge doesn't cause repeat alerts
+
+    function loadHome() {
+      try {
+        const h = JSON.parse(localStorage.getItem('narain_home_coords') || 'null');
+        return h && isFinite(h.lat) && isFinite(h.lng) ? { lat: +h.lat, lng: +h.lng, updated: +h.updated || 0 } : null;
+      } catch (e) { return null; }
+    }
+
+    function saveHome(h) {
+      homeCoords = h;
+      localStorage.setItem('narain_home_coords', JSON.stringify(h));
+      drawHomeCircle();
+      Object.keys(atHome).forEach(k => delete atHome[k]); // start fresh against the new home
+    }
+
+    function setHomeCoordinates() {
+      if (currentLat === null) {
+        alert('Waiting for your location. Allow location access, then try again.');
+        return;
+      }
+      if (homeCoords && !confirm('Move Home to where you are now? This changes Home for the whole family.')) return;
+      saveHome({ lat: currentLat, lng: currentLng, updated: Date.now() });
+      broadcastData(Object.assign({ type: 'HOME' }, homeCoords));
+      askNotificationPermission();
       triggerHaptic([60, 40, 60]);
-      alert('📍 Home Sanctuary pinned successfully!');
+      alert('📍 Home pinned here. You will be alerted when a family member arrives or leaves.');
+    }
+
+    function distanceM(lat1, lng1, lat2, lng2) {
+      const R = 6371000, rad = Math.PI / 180;
+      const dLat = (lat2 - lat1) * rad, dLng = (lng2 - lng1) * rad;
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLng / 2) ** 2;
+      return 2 * R * Math.asin(Math.sqrt(a));
+    }
+
+    function checkGeofence(r, lat, lng) {
+      if (!homeCoords) return;
+      const d = distanceM(lat, lng, homeCoords.lat, homeCoords.lng);
+      const was = atHome[r];
+      const inside = was ? d <= HOME_EXIT_M : d <= HOME_ENTER_M;
+      atHome[r] = inside;
+      if (was === undefined || was === inside) return; // first reading, or no change
+      notify(inside ? '🏠 ' + ROLES[r].name + ' arrived home' : '🚶 ' + ROLES[r].name + ' left home');
     }
 
     function sendEmergencySOS() {
+      // The SOS button is big, so make sure it wasn't pressed by accident.
+      if (!confirm('🚨 Send an EMERGENCY SOS with your location to the family?')) return;
       beep(880, 1.2);
       triggerHaptic([200, 100, 200, 100, 400]);
-      broadcastData({ type: 'SOS', role: userRole, lat: currentLat, lng: currentLng });
-      alert('🚨 EMERGENCY SOS ping sent to family members!');
+      broadcastData({ type: 'SOS', lat: currentLat, lng: currentLng });
+      const online = Object.values(peerConns).filter(c => c && c.open).length;
+      alert(online ? '🚨 EMERGENCY SOS sent to ' + online + ' family member(s)!'
+                   : '🚨 SOS NOT delivered: no family member is online right now.');
     }
 
     // --- 5. PEERJS MESH ---
     function initPeerMesh(myId) {
       if (peer) peer.destroy();
       peerConns = {};
+      Object.keys(links).forEach(k => delete links[k]);
 
       peer = new Peer(myId, {
         debug: 1,
         config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
       });
+      refreshPresence();
 
       peer.on('open', () => {
+        refreshPresence();
         Object.keys(ROLES).forEach(r => {
-          if (r !== userRole) {
-            const conn = peer.connect(peerIdFor(r), { reliable: true });
-            bindConnEvents(conn, r);
-          }
+          if (r !== userRole) bindConnEvents(peer.connect(peerIdFor(r), { reliable: true }), r);
         });
       });
 
@@ -1295,28 +1572,97 @@
         const sender = Object.keys(ROLES).find(k => peerIdFor(k) === conn.peer);
         if (sender) bindConnEvents(conn, sender);
       });
+
+      // Phones drop the server connection when asleep; reconnect so family can find us again.
+      const thisPeer = peer;
+      thisPeer.on('disconnected', () => {
+        refreshPresence();
+        setTimeout(() => { if (!thisPeer.destroyed && thisPeer.disconnected) thisPeer.reconnect(); }, 3000);
+      });
     }
 
     function bindConnEvents(conn, r) {
-      conn.on('open', () => { peerConns[r] = conn; });
-      conn.on('data', data => {
-        if (data.type === 'TELEMETRY') {
-          addNodeMarker(data.role, data.lat, data.lng, data.speed + ' km/h');
-          const spdEl = document.getElementById('speed-' + data.role);
-          if (spdEl) spdEl.innerHTML = data.speed + ' <span>km/h</span>';
-        } else if (data.type === 'CHAT') {
-          appendBubble(data.text, false, data.time);
-          beep(540, 0.2);
-          triggerHaptic([80, 40, 80]);
-        } else if (data.type === 'STATUS_MOOD') {
-          const badge = document.getElementById('zone-' + data.role);
-          if (badge) badge.innerText = data.mood;
-        } else if (data.type === 'SOS') {
-          beep(900, 1.5);
-          triggerHaptic([300, 150, 300, 150, 600]);
-          alert('🚨 EMERGENCY SOS from ' + ROLES[data.role].name + '!');
-        }
+      conn.on('open', () => {
+        (links[r] = links[r] || new Set()).add(conn);
+        peerConns[r] = conn;
+        refreshPresence();
+        sendMyState(conn);
       });
+      const drop = () => {
+        if (links[r]) links[r].delete(conn);
+        if (peerConns[r] === conn) {
+          const other = links[r] && [...links[r]].find(c => c.open);
+          if (other) peerConns[r] = other; else delete peerConns[r];
+        }
+        refreshPresence();
+      };
+      conn.on('close', drop);
+      conn.on('error', drop);
+      conn.on('data', data => handlePeerData(r, data));
+    }
+
+    // When a family member connects, send them this phone's current state.
+    function sendMyState(conn) {
+      if (currentLat !== null) conn.send(myTelemetry());
+      if (myBattery !== null) conn.send({ type: 'BATTERY', level: myBattery });
+      if (myMood) conn.send({ type: 'STATUS_MOOD', mood: myMood });
+      if (homeCoords) conn.send(Object.assign({ type: 'HOME' }, homeCoords));
+      conn.send({ type: 'ERRANDS', items: errands });
+    }
+
+    // `r` is the sender's role, known from which connection the data came on.
+    function handlePeerData(r, data) {
+      if (!data || typeof data !== 'object') return;
+      if (data.type === 'TELEMETRY') {
+        const lat = Number(data.lat), lng = Number(data.lng), speed = Number(data.speed);
+        if (data.lat == null || data.lng == null || !isFinite(lat) || !isFinite(lng)) return;
+        const spd = isFinite(speed) ? speed.toFixed(1) : '0.0';
+        addNodeMarker(r, lat, lng, spd + ' km/h');
+        setSpeed(r, spd);
+        checkGeofence(r, lat, lng);
+      } else if (data.type === 'HOME') {
+        const lat = Number(data.lat), lng = Number(data.lng), updated = Number(data.updated) || 0;
+        if (data.lat == null || data.lng == null || !isFinite(lat) || !isFinite(lng)) return;
+        if (!homeCoords || updated > homeCoords.updated) {
+          const moved = !!homeCoords;
+          saveHome({ lat, lng, updated });
+          if (moved) showToast('📍 ' + ROLES[r].name + ' moved Home to a new place');
+        }
+      } else if (data.type === 'VOICE') {
+        const buf = data.audio;
+        const size = buf ? (buf.byteLength || buf.size || 0) : 0;
+        if (!size || size > 3 * 1024 * 1024) return;
+        const mime = /^audio\/[\w.+-]+(;[\w=.,+ -]*)?$/.test(String(data.mime)) ? String(data.mime) : 'audio/webm';
+        const blob = buf instanceof Blob ? buf : new Blob([buf], { type: mime });
+        const secs = Math.max(1, Math.min(60, Number(data.secs) || 1));
+        appendVoiceBubble(blob, false, String(data.time || ''), ROLES[r].name + (data.group ? ' → Family' : ''), secs, true);
+        triggerHaptic([80, 40, 80]);
+        notifyIfAway('🎙️ Voice message from ' + ROLES[r].name, secs + ' seconds. Open the app to listen.');
+      } else if (data.type === 'BATTERY') {
+        setBattery(r, data.level);
+      } else if (data.type === 'CHAT') {
+        const from = ROLES[r].name + (data.group ? ' → Family' : '');
+        const text = String(data.text || '').slice(0, 1000);
+        appendBubble(text, false, String(data.time || ''), from);
+        beep(540, 0.2);
+        triggerHaptic([80, 40, 80]);
+        notifyIfAway('💬 ' + from, text);
+      } else if (data.type === 'STATUS_MOOD') {
+        setText('zone-' + r, String(data.mood || '').slice(0, 40) || '—');
+      } else if (data.type === 'SOS') {
+        beep(900, 1.5);
+        triggerHaptic([300, 150, 300, 150, 600]);
+        const lat = Number(data.lat), lng = Number(data.lng);
+        if (data.lat != null && data.lng != null && isFinite(lat) && isFinite(lng)) {
+          addNodeMarker(r, lat, lng, '🚨 SOS');
+          map.setView([lat, lng], 16);
+        }
+        notifyIfAway('🚨 EMERGENCY SOS from ' + ROLES[r].name, 'Open the app to see where they are.');
+        // A pop-up pauses the app until tapped, so only show it when someone is looking at the screen.
+        if (document.visibilityState === 'visible') alert('🚨 EMERGENCY SOS from ' + ROLES[r].name + '!');
+      } else if (data.type === 'ERRANDS') {
+        mergeErrands(data.items);
+      }
     }
 
     function broadcastData(payload) {
@@ -1325,23 +1671,125 @@
       });
     }
 
-    // --- 6. HEALTH & HYDRATION ---
+    // --- 6. HEALTH & HYDRATION (saved on this phone, resets each day) ---
+    function todayKey() {
+      return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+    }
+
+    function loadDaily(name) {
+      try {
+        const saved = JSON.parse(localStorage.getItem('narain_' + name) || 'null');
+        return saved && saved.day === todayKey() && isFinite(saved.value) ? saved.value : 0;
+      } catch (e) { return 0; }
+    }
+
+    function addDaily(name, amount) {
+      const value = loadDaily(name) + amount;
+      localStorage.setItem('narain_' + name, JSON.stringify({ day: todayKey(), value }));
+      return value;
+    }
+
+    function renderHealth() {
+      const water = loadDaily('water');
+      const steps = loadDaily('steps');
+      const waterEl = document.getElementById('waterAmount');
+      waterEl.textContent = water.toLocaleString() + ' ';
+      const unit = document.createElement('span');
+      unit.style.cssText = 'font-size:0.85rem; font-weight:500;';
+      unit.textContent = 'ml';
+      waterEl.appendChild(unit);
+      setText('waterGoalTxt', 'Daily Goal: ' + waterGoalMl.toLocaleString() + ' ml ✎');
+      setText('waterGoalBadge', 'Target: ' + Math.min(100, Math.round(water / waterGoalMl * 100)) + '% Reached');
+      setText('walkStepsCount', steps.toLocaleString());
+      setText('walkDistKm', (steps * 0.00075).toFixed(2) + ' km walked');
+    }
+
     function logWaterIntake(amt) {
-      waterMl += amt;
-      document.getElementById('waterAmount').innerHTML = waterMl.toLocaleString() + ' <span style="font-size:0.85rem; font-weight:500;">ml</span>';
+      addDaily('water', amt);
+      localStorage.setItem('narain_last_drink', String(Date.now())); // restarts the reminder countdown
+      renderHealth();
+      scheduleNativeReminder();
       beep(720, 0.2);
       triggerHaptic([40]);
     }
 
+    function editWaterGoal() {
+      const v = Number(prompt('Daily water goal in ml:', waterGoalMl));
+      if (!isFinite(v) || v < 250 || v > 10000) return;
+      waterGoalMl = Math.round(v);
+      localStorage.setItem('narain_water_goal', String(waterGoalMl));
+      renderHealth();
+      scheduleNativeReminder();
+    }
+
+    // --- DRINK REMINDER ---
+    // Reminds every N minutes since the last drink or reminder, until today's goal is reached.
+    function loadReminder() {
+      try {
+        const r = JSON.parse(localStorage.getItem('narain_reminder') || 'null');
+        return r && typeof r.on === 'boolean' && r.everyMin >= 5 ? r : { on: false, everyMin: 60 };
+      } catch (e) { return { on: false, everyMin: 60 }; }
+    }
+
+    function renderReminder() {
+      setText('reminderStateTxt', reminder.on ? 'ON · ' + reminder.everyMin + 'm' : 'OFF');
+    }
+
     function toggleDrinkReminder() {
-      reminderActive = !reminderActive;
-      const stateTxt = document.getElementById('reminderStateTxt');
-      stateTxt.innerText = reminderActive ? 'ON' : 'OFF';
-      beep(reminderActive ? 600 : 400, 0.2);
+      if (!reminder.on) {
+        const v = Number(prompt('Remind me to drink water every how many minutes?', reminder.everyMin));
+        if (!isFinite(v) || v < 5 || v > 600) return; // cancelled or not a sensible number
+        reminder = { on: true, everyMin: Math.round(v) };
+        localStorage.setItem('narain_last_reminder', String(Date.now()));
+        askNotificationPermission();
+      } else {
+        reminder = Object.assign({}, reminder, { on: false });
+      }
+      localStorage.setItem('narain_reminder', JSON.stringify(reminder));
+      renderReminder();
+      scheduleNativeReminder();
+      beep(reminder.on ? 600 : 400, 0.2);
       triggerHaptic([30]);
     }
 
-    let steps = 5240;
+    // Android app: the reminder is a repeating phone alarm, so it fires even when the app is closed.
+    // (Re)start it every N minutes from now; cancel it when off or when today's goal is reached.
+    async function scheduleNativeReminder() {
+      if (!NATIVE) return;
+      try {
+        await LocalNotif.cancel({ notifications: [{ id: REMINDER_NOTIF_ID }] });
+        if (!reminder.on || loadDaily('water') >= waterGoalMl) return;
+        await LocalNotif.schedule({ notifications: [{
+          id: REMINDER_NOTIF_ID,
+          title: '💧 Time to drink water',
+          body: 'Tap "+ 250 ml" in the app after drinking.',
+          schedule: { every: 'minute', count: reminder.everyMin, allowWhileIdle: true },
+          smallIcon: 'ic_stat_family', iconColor: '#38BDF8'
+        }] });
+      } catch (e) {}
+    }
+
+    // Android app: re-create the alarm if it's missing (e.g. a new day after reaching yesterday's goal).
+    async function ensureNativeReminder() {
+      if (!reminder.on || loadDaily('water') >= waterGoalMl) return;
+      try {
+        const { notifications } = await LocalNotif.getPending();
+        if (!notifications.some(n => n.id === REMINDER_NOTIF_ID)) scheduleNativeReminder();
+      } catch (e) {}
+    }
+
+    function checkReminder() {
+      if (NATIVE) { ensureNativeReminder(); return; } // the phone alarm does the reminding
+      if (!reminder.on) return;
+      const last = Math.max(Number(localStorage.getItem('narain_last_reminder')) || 0,
+                            Number(localStorage.getItem('narain_last_drink')) || 0);
+      if (Date.now() - last < reminder.everyMin * 60000) return;
+      const water = loadDaily('water');
+      if (water >= waterGoalMl) return;
+      localStorage.setItem('narain_last_reminder', String(Date.now()));
+      notify('💧 Time to drink water', water.toLocaleString() + ' of ' + waterGoalMl.toLocaleString() + ' ml so far today. Tap "+ 250 ml" after drinking.');
+    }
+
     function initStepCounter() {
       if (window.DeviceMotionEvent) {
         let lastMag = 0;
@@ -1350,9 +1798,8 @@
           if (!a) return;
           const mag = Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
           if (Math.abs(mag - lastMag) > 3.4) {
-            steps++;
-            document.getElementById('walkStepsCount').innerText = steps.toLocaleString();
-            document.getElementById('walkDistKm').innerText = (steps * 0.00075).toFixed(2) + ' km walked';
+            addDaily('steps', 1);
+            renderHealth();
           }
           lastMag = mag;
         });
@@ -1360,18 +1807,29 @@
     }
 
     // --- 7. COMMS & PTT ---
+    function renderChatTabs() {
+      const row = document.getElementById('chatTabs');
+      row.innerHTML = '';
+      const targets = ['group'].concat(Object.keys(ROLES).filter(r => r !== userRole));
+      if (!targets.includes(activeChatTarget)) activeChatTarget = 'group';
+      targets.forEach(t => {
+        const b = document.createElement('button');
+        b.className = 'tab-btn';
+        b.id = 'chat-tab-' + t;
+        b.textContent = t === 'group' ? '👥 Family' : ROLES[t].name;
+        b.onclick = () => selectChatTab(t);
+        row.appendChild(b);
+      });
+      selectChatTab(activeChatTarget);
+    }
+
     function selectChatTab(target) {
       activeChatTarget = target;
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       const activeEl = document.getElementById('chat-tab-' + target);
       if (activeEl) activeEl.classList.add('active');
-
-      const placeholderMap = {
-        group: 'Send message to Family Group...',
-        dad: 'Send quick message to Dad...',
-        mom: 'Send quick message to Mom...'
-      };
-      document.getElementById('commsInput').placeholder = placeholderMap[target];
+      document.getElementById('commsInput').placeholder =
+        target === 'group' ? 'Message the family...' : 'Message ' + ROLES[target].name + '...';
     }
 
     function sendQuickCheckin(msgText) {
@@ -1384,77 +1842,246 @@
       const text = input.value.trim();
       if (!text) return;
 
-      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      appendBubble(text, true, time);
+      const time = nowTime();
+      const delivered = sendToActiveTarget({ type: 'CHAT', text, time });
+      appendBubble(text, true, deliveryLine(time, delivered), 'To ' + targetName());
       input.value = '';
       triggerHaptic([30]);
+    }
 
+    // Sends to the selected chat tab (whole family or one person). Returns true if anyone got it.
+    function sendToActiveTarget(payload) {
       if (activeChatTarget === 'group') {
-        broadcastData({ type: 'CHAT', text, time });
-      } else if (peerConns[activeChatTarget] && peerConns[activeChatTarget].open) {
-        peerConns[activeChatTarget].send({ type: 'CHAT', text, time });
+        const delivered = Object.values(peerConns).some(c => c && c.open);
+        broadcastData(Object.assign({ group: true }, payload));
+        return delivered;
+      }
+      const c = peerConns[activeChatTarget];
+      if (c && c.open) { c.send(payload); return true; }
+      return false;
+    }
+
+    function targetName() {
+      return activeChatTarget === 'group' ? 'Family' : ROLES[activeChatTarget].name;
+    }
+
+    function deliveryLine(time, delivered) {
+      if (delivered) return time;
+      return time + ' · not sent, ' + (activeChatTarget === 'group' ? 'no one online' : targetName() + ' offline');
+    }
+
+    function appendVoiceBubble(blob, isMine, time, label, secs, autoplay) {
+      const div = appendBubble('🎙️ Voice message · ' + secs + 's', isMine, time, label);
+      div.classList.add('voice-bubble');
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.preload = 'auto';
+      audio.src = URL.createObjectURL(blob);
+      div.insertBefore(audio, div.lastChild); // above the time line
+      // Walkie-talkie: play straight away. Browsers allow this once the app has been tapped.
+      if (autoplay) audio.play().catch(() => {});
+    }
+
+    function renderChatEmpty() {
+      const box = document.getElementById('chatStream');
+      if (!box.children.length) {
+        const empty = document.createElement('div');
+        empty.className = 'chat-empty';
+        empty.textContent = 'No messages yet.';
+        box.appendChild(empty);
       }
     }
 
-    function appendBubble(text, isMine, time) {
+    function appendBubble(text, isMine, time, label) {
       const box = document.getElementById('chatStream');
+      const empty = box.querySelector('.chat-empty');
+      if (empty) empty.remove();
       const div = document.createElement('div');
       div.className = 'msg-bubble ' + (isMine ? 'mine' : 'theirs');
-      div.innerHTML = `${text}<div class="msg-time">${time}</div>`;
+      if (label) {
+        const who = document.createElement('div');
+        who.className = 'msg-time';
+        who.style.cssText = 'margin:0 0 3px;';
+        who.textContent = label;
+        div.appendChild(who);
+      }
+      div.appendChild(document.createTextNode(text));
+      const t = document.createElement('div');
+      t.className = 'msg-time';
+      t.textContent = time;
+      div.appendChild(t);
       box.appendChild(div);
       box.scrollTop = box.scrollHeight;
+      return div;
     }
 
-    function simulatePlayVoice() {
-      beep(500, 0.4);
-      setTimeout(() => beep(650, 0.5), 300);
-      triggerHaptic([40, 40]);
-    }
+    // --- HOLD TO TALK: record while held, send the clip to the selected chat tab on release ---
+    const PTT_MAX_MS = 30000;
+    let pttRecorder = null, pttStream = null, pttChunks = [], pttStartedAt = 0, pttHeld = false, pttTimer = null;
 
-    let pttRecorder = null, audioBlobs = [];
-    async function startPTT() {
+    async function startPTT(ev) {
+      // Keep the "hold" even if the finger slides a little off the button.
+      try { if (ev && ev.currentTarget) ev.currentTarget.setPointerCapture(ev.pointerId); } catch (e) {}
+      if (pttHeld || pttRecorder) return;
+      pttHeld = true;
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        pttRecorder = new MediaRecorder(stream);
-        audioBlobs = [];
-        pttRecorder.ondataavailable = e => audioBlobs.push(e.data);
-        pttRecorder.start();
-        document.getElementById('pttBadge').classList.add('recording');
-        document.getElementById('pttBadge').innerHTML = '🔴 Transmitting...';
-        triggerHaptic([60]);
+        pttStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       } catch (e) {
+        pttHeld = false;
         alert('Microphone permission required for Radio.');
+        return;
       }
+      if (!pttHeld) { releaseMic(); return; } // let go before the microphone was ready
+      pttChunks = [];
+      pttRecorder = new MediaRecorder(pttStream);
+      pttRecorder.ondataavailable = e => { if (e.data && e.data.size) pttChunks.push(e.data); };
+      pttRecorder.onstop = sendVoiceClip;
+      pttRecorder.start();
+      pttStartedAt = Date.now();
+      pttTimer = setTimeout(stopPTT, PTT_MAX_MS);
+      document.getElementById('pttBtn').classList.add('recording');
+      setText('pttLabel', '🔴 To ' + targetName() + '…');
+      triggerHaptic([60]);
     }
 
     function stopPTT() {
-      if (pttRecorder && pttRecorder.state === 'recording') {
-        pttRecorder.stop();
-        document.getElementById('pttBadge').classList.remove('recording');
-        document.getElementById('pttBadge').innerHTML = '<span>🎙️</span> Hold to Talk';
-        beep(700, 0.2);
-        triggerHaptic([40]);
-      }
+      pttHeld = false;
+      clearTimeout(pttTimer);
+      if (pttRecorder && pttRecorder.state === 'recording') pttRecorder.stop(); // onstop sends the clip
+      document.getElementById('pttBtn').classList.remove('recording');
+      setText('pttLabel', 'Hold to talk');
     }
 
-    // --- 8. SHARED ERRANDS ---
+    function releaseMic() {
+      if (pttStream) pttStream.getTracks().forEach(t => t.stop()); // turns the microphone off
+      pttStream = null;
+    }
+
+    async function sendVoiceClip() {
+      const rec = pttRecorder;
+      pttRecorder = null;
+      releaseMic();
+      const ms = Date.now() - pttStartedAt;
+      if (ms < 500 || !pttChunks.length) { showToast('🎙️ Hold the button down while you talk.'); return; }
+      const blob = new Blob(pttChunks, { type: rec.mimeType || 'audio/webm' });
+      const secs = Math.max(1, Math.round(ms / 1000));
+      const time = nowTime();
+      const delivered = sendToActiveTarget({ type: 'VOICE', audio: await blob.arrayBuffer(), mime: blob.type, secs, time });
+      appendVoiceBubble(blob, true, deliveryLine(time, delivered), 'To ' + targetName(), secs, false);
+      // The chat may be off screen, so confirm here too.
+      showToast(delivered ? '🎙️ Voice message sent to ' + targetName()
+                          : '🎙️ Not sent: ' + (activeChatTarget === 'group' ? 'no one is online' : targetName() + ' is offline'));
+      beep(700, 0.2);
+      triggerHaptic([40]);
+    }
+
+    // --- 8. SHARED ERRANDS (synced with family; last change wins) ---
+    function validErrand(e) {
+      return e && typeof e.id === 'string' && typeof e.text === 'string' &&
+             typeof e.updated === 'number' && typeof e.created === 'number';
+    }
+
+    function loadErrands() {
+      try {
+        const list = JSON.parse(localStorage.getItem('narain_errands') || '[]');
+        const monthAgo = Date.now() - 30 * 24 * 3600 * 1000;
+        return Array.isArray(list) ? list.filter(e => validErrand(e) && !(e.deleted && e.updated < monthAgo)) : [];
+      } catch (e) { return []; }
+    }
+
+    function saveErrands() {
+      localStorage.setItem('narain_errands', JSON.stringify(errands));
+    }
+
+    function newErrandId() {
+      const rand = crypto.getRandomValues(new Uint32Array(2));
+      return Date.now().toString(36) + '-' + rand[0].toString(36) + rand[1].toString(36);
+    }
+
     function appendErrand() {
       const field = document.getElementById('errandText');
-      const text = field.value.trim();
+      const text = field.value.trim().slice(0, 120);
       if (!text) return;
-
-      const container = document.getElementById('errandsListContainer');
-      const item = document.createElement('div');
-      item.className = 'errand-item';
-      item.innerHTML = `
-        <input type="checkbox" style="accent-color:var(--emerald);">
-        <span class="errand-item-title">${text}</span>
-        <span class="errand-tag" onclick="this.parentElement.remove()">Remove ✕</span>
-      `;
-      container.prepend(item);
+      const now = Date.now();
+      upsertErrand({ id: newErrandId(), text, done: false, by: userRole, deleted: false, created: now, updated: now });
       field.value = '';
       beep(620, 0.2);
       triggerHaptic([30]);
+    }
+
+    function toggleErrand(id) {
+      const e = errands.find(x => x.id === id);
+      if (e) upsertErrand(Object.assign({}, e, { done: !e.done, updated: Date.now() }));
+    }
+
+    function removeErrand(id) {
+      const e = errands.find(x => x.id === id);
+      if (e) upsertErrand(Object.assign({}, e, { deleted: true, updated: Date.now() }));
+    }
+
+    function upsertErrand(item) {
+      const i = errands.findIndex(e => e.id === item.id);
+      if (i >= 0) errands[i] = item; else errands.push(item);
+      saveErrands();
+      renderErrands();
+      broadcastData({ type: 'ERRANDS', items: [item] });
+    }
+
+    function mergeErrands(items) {
+      if (!Array.isArray(items)) return;
+      let changed = false;
+      items.slice(0, 500).forEach(raw => {
+        if (!validErrand(raw)) return;
+        const item = {
+          id: raw.id.slice(0, 40), text: raw.text.slice(0, 120), done: !!raw.done,
+          by: ROLES[raw.by] ? raw.by : '', deleted: !!raw.deleted, created: raw.created, updated: raw.updated
+        };
+        const mine = errands.find(e => e.id === item.id);
+        if (!mine) { errands.push(item); changed = true; }
+        else if (item.updated > mine.updated) { Object.assign(mine, item); changed = true; }
+      });
+      if (changed) { saveErrands(); renderErrands(); }
+    }
+
+    function renderErrands() {
+      const box = document.getElementById('errandsListContainer');
+      box.innerHTML = '';
+      const list = errands.filter(e => !e.deleted).sort((a, b) => (a.done - b.done) || (b.created - a.created));
+      if (!list.length) {
+        const empty = document.createElement('div');
+        empty.className = 'errand-empty';
+        empty.textContent = 'No errands yet. Add one above.';
+        box.appendChild(empty);
+        return;
+      }
+      list.forEach(e => {
+        const row = document.createElement('div');
+        row.className = 'errand-item';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = e.done;
+        cb.style.accentColor = 'var(--emerald)';
+        cb.onchange = () => toggleErrand(e.id);
+
+        const title = document.createElement('span');
+        title.className = 'errand-item-title';
+        title.textContent = e.text;
+        if (e.done) title.style.cssText = 'text-decoration:line-through; opacity:0.5;';
+
+        const tag = document.createElement('span');
+        tag.className = 'errand-tag' + (e.done ? ' done' : '');
+        tag.textContent = e.done ? 'Done' : (ROLES[e.by] ? 'by ' + ROLES[e.by].name : 'Added');
+
+        const del = document.createElement('button');
+        del.className = 'errand-remove';
+        del.title = 'Remove';
+        del.textContent = '✕';
+        del.onclick = () => removeErrand(e.id);
+
+        row.append(cb, title, tag, del);
+        box.appendChild(row);
+      });
     }
 
     function quickVoiceNotePrompt() {

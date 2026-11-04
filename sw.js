@@ -1,4 +1,4 @@
-const CACHE_NAME = 'narains-family-v6-familycode';
+const CACHE_NAME = 'narains-family-v6-realdata';
 const ASSETS = [
   './',
   './index.html',
@@ -22,5 +22,29 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // The app page: always try the newest version from the internet first,
+  // so updates show up right away. Use the saved copy only when offline.
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put('./index.html', copy));
+          return res;
+        })
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
   e.respondWith(caches.match(e.request).then((res) => res || fetch(e.request)));
+});
+
+// Tapping a reminder / arrived-home notification opens the app.
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) =>
+      list.length ? list[0].focus() : self.clients.openWindow('./')
+    )
+  );
 });
