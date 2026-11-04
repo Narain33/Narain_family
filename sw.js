@@ -1,4 +1,4 @@
-const CACHE_NAME = 'narains-family-v2';
+const CACHE_NAME = 'narains-family-v4';
 const ASSETS = [
   './',
   './index.html',
