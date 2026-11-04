@@ -6,10 +6,15 @@
   <title>Narain's Family</title>
   
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#070a12">
+  <meta name="theme-color" content="#070b14">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3105/3105807.png">
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link rel="apple-touch-icon" href="logo.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 
   <!-- Leaflet & PeerJS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -18,334 +23,961 @@
 
   <style>
     :root {
-      --bg: #070a12;
-      --card-bg: rgba(15, 23, 42, 0.78);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --accent-cyan: #38bdf8;
-      --accent-emerald: #10b981;
-      --accent-amber: #f59e0b;
-      --accent-rose: #f43f5e;
-      --accent-purple: #a855f7;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-    body { background: var(--bg); color: var(--text-main); min-height: 100vh; overflow-x: hidden; padding-bottom: 60px; }
+      --bg: #070b14;
+      --card-bg: #0e1628;
+      --card-inner: #131c31;
+      --card-border: #1e2c47;
+      --border-subtle: rgba(255, 255, 255, 0.06);
 
-    /* Header */
-    header {
-      position: sticky; top: 0; z-index: 1000;
-      background: rgba(7, 10, 18, 0.88); backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--card-border);
-      padding: 12px 18px; display: flex; justify-content: space-between; align-items: center;
-    }
-    .brand-title { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.4px; color: var(--accent-cyan); display: flex; align-items: center; gap: 8px; }
-    .profile-pill {
-      display: flex; align-items: center; gap: 8px;
-      background: rgba(30, 41, 59, 0.6); border: 1px solid var(--card-border);
-      padding: 5px 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; cursor: pointer;
-    }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; }
-    .status-online { background: #10b981; box-shadow: 0 0 8px #10b981; }
+      --cyan-bright: #38bdf8;
+      --cyan-deep: #0284c7;
+      --emerald: #10b981;
+      --emerald-dark: #059669;
+      --amber: #f59e0b;
+      --purple: #8b5cf6;
+      --rose: #f43f5e;
+      --orange-mic: #f97316;
 
-    .container { max-width: 620px; margin: 0 auto; padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+      --text-100: #ffffff;
+      --text-200: #e2e8f0;
+      --text-400: #94a3b8;
+      --text-500: #64748b;
+    }
 
-    /* Glass Cards */
-    .glass-card {
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-100);
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: 96px;
+    }
+
+    .app-screen {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 14px 14px 20px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Top Brand Header with Logo */
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 4px;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-img {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+    }
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: #fff;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-badge {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(14, 165, 233, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: var(--cyan-bright);
+      cursor: pointer;
+    }
+
+    /* Section Card */
+    .stitch-card {
       background: var(--card-bg);
-      backdrop-filter: blur(14px);
       border: 1px solid var(--card-border);
-      border-radius: 18px;
+      border-radius: 20px;
       padding: 16px;
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+      position: relative;
     }
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .card-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
 
-    #map { height: 260px; width: 100%; border-radius: 12px; border: 1px solid var(--card-border); }
-
-    /* Telemetry Grid with Battery & Zone */
-    .telemetry-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
-    .member-telemetry {
-      background: rgba(15, 23, 42, 0.55); border: 1px solid var(--card-border);
-      border-radius: 14px; padding: 10px 8px; text-align: center; position: relative; overflow: hidden;
+    .card-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
     }
-    .member-telemetry.active-narain { border-top: 3px solid var(--accent-cyan); }
-    .member-telemetry.active-dad { border-top: 3px solid var(--accent-emerald); }
-    .member-telemetry.active-mom { border-top: 3px solid var(--accent-amber); }
-    .mem-name { font-size: 0.75rem; font-weight: 700; color: #cbd5e1; }
-    .mem-speed { font-size: 1.25rem; font-weight: 900; color: #fff; margin: 3px 0; }
-    .mem-speed span { font-size: 0.65rem; color: var(--text-muted); font-weight: 500; }
-    .mem-state { font-size: 0.68rem; color: var(--text-muted); }
-    .mem-subinfo { font-size: 0.68rem; margin-top: 4px; display: flex; justify-content: space-around; color: #94a3b8; }
-    .badge-zone { font-size: 0.62rem; padding: 2px 6px; border-radius: 6px; background: rgba(56, 189, 248, 0.15); color: var(--accent-cyan); font-weight: 600; display: inline-block; margin-top: 4px; }
 
-    /* Quick Stats */
-    .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .metric-value { font-size: 1.5rem; font-weight: 800; color: #fff; margin-top: 4px; }
-    .metric-sub { font-size: 0.72rem; color: var(--text-muted); }
-
-    /* Buttons */
-    .btn {
-      background: rgba(30, 41, 59, 0.85); color: #fff; border: 1px solid var(--card-border);
-      padding: 9px 15px; border-radius: 10px; font-weight: 600; font-size: 0.82rem; cursor: pointer;
-      display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s ease;
+    .section-title {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-200);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
-    .btn:active { transform: scale(0.97); }
-    .btn-cyan { background: #0284c7; border-color: #38bdf8; }
-    .btn-green { background: #059669; border-color: #10b981; }
-    .btn-purple { background: #7c3aed; border-color: #a855f7; }
-    .btn-danger { background: #be123c; border-color: #f43f5e; color: #fff; }
-    .btn-recording { background: #dc2626 !important; border-color: #ef4444 !important; animation: pulse 1s infinite; }
-
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
-
-    /* Chat Section */
-    .chat-tabs { display: flex; gap: 6px; background: rgba(15, 23, 42, 0.6); padding: 4px; border-radius: 10px; border: 1px solid var(--card-border); margin-bottom: 10px; }
-    .chat-tab {
-      flex: 1; padding: 7px 0; font-size: 0.75rem; font-weight: 600; border: none; background: transparent;
-      color: var(--text-muted); border-radius: 7px; cursor: pointer; text-align: center;
+    .title-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--cyan-bright);
+      box-shadow: 0 0 8px var(--cyan-bright);
     }
-    .chat-tab.active { background: #1e293b; color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    .title-dot.green { background: var(--emerald); box-shadow: 0 0 8px var(--emerald); }
+    .title-dot.purple { background: var(--purple); box-shadow: 0 0 8px var(--purple); }
 
-    #chatBox {
-      height: 190px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
-      padding: 10px; background: rgba(8, 12, 20, 0.6); border-radius: 10px; border: 1px solid var(--card-border);
+    .badge-pill {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(14, 165, 233, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: var(--cyan-bright);
     }
-    .chat-msg { max-width: 82%; padding: 8px 12px; border-radius: 12px; font-size: 0.82rem; line-height: 1.35; position: relative; }
-    .chat-msg-mine { align-self: flex-end; background: #0284c7; color: #fff; border-bottom-right-radius: 2px; }
-    .chat-msg-theirs { align-self: flex-start; background: #1e293b; color: #f1f5f9; border-bottom-left-radius: 2px; border: 1px solid var(--card-border); }
-    .chat-meta { font-size: 0.62rem; opacity: 0.75; margin-top: 3px; display: flex; justify-content: space-between; gap: 8px; }
-
-    .input-row { display: flex; gap: 8px; margin-top: 10px; }
-    .input-box {
-      flex: 1; padding: 10px 14px; background: rgba(8, 12, 20, 0.8);
-      border: 1px solid var(--card-border); color: #fff; border-radius: 10px; font-size: 0.82rem; outline: none;
+    .badge-pill.green {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.25);
+      color: var(--emerald);
     }
-    .input-box:focus { border-color: var(--accent-cyan); }
 
-    /* Grocery & Errands List */
-    .checklist-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(15, 23, 42, 0.4); border: 1px solid var(--card-border); border-radius: 10px; margin-top: 6px; }
-    .checklist-text { font-size: 0.82rem; flex: 1; margin-left: 8px; }
-    .checklist-done { text-decoration: line-through; opacity: 0.5; }
+    /* Map Box */
+    .map-wrapper {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+    }
+    #map {
+      height: 250px;
+      width: 100%;
+      background: #090e1a;
+    }
+    .map-overlay-badge {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      z-index: 500;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.68rem;
+      color: var(--text-400);
+      border: 1px solid var(--card-border);
+    }
 
-    /* Modal for Identity Selection */
-    .modal-overlay {
-      position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+    .map-controls-overlay {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .map-btn-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(14, 22, 40, 0.9);
+      border: 1px solid var(--card-border);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .map-avatar-node {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.82rem;
+      position: relative;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 16px rgba(0, 0, 0, 0.8);
+    }
+    .node-narain { background: linear-gradient(135deg, #0284c7, #38bdf8); box-shadow: 0 0 16px rgba(56, 189, 248, 0.6); }
+    .node-dad    { background: linear-gradient(135deg, #059669, #10b981); box-shadow: 0 0 16px rgba(16, 185, 129, 0.6); }
+    .node-mom    { background: linear-gradient(135deg, #d97706, #f59e0b); box-shadow: 0 0 16px rgba(245, 158, 11, 0.6); }
+
+    .node-tag {
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(7, 11, 20, 0.9);
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 1px 6px;
+      font-size: 0.58rem;
+      white-space: nowrap;
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    /* 3-Column Telemetry Grid */
+    .telem-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .telem-box {
+      background: var(--card-inner);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 10px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .telem-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .telem-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 2px 0;
+    }
+    .telem-val span {
+      font-size: 0.62rem;
+      color: var(--text-400);
+      font-weight: 500;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .telem-state {
+      font-size: 0.65rem;
+      color: var(--text-400);
+    }
+    .telem-loc-badge {
+      font-size: 0.58rem;
+      padding: 3px 6px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--cyan-bright);
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .telem-loc-badge.green { color: var(--emerald); }
+
+    /* Quick Status / Mood Pills */
+    .mood-row {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      margin-top: 10px;
+    }
+    .mood-chip {
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: var(--card-inner);
+      border: 1px solid var(--card-border);
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--text-400);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .mood-chip.selected {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--cyan-bright);
+      color: var(--cyan-bright);
+    }
+
+    /* Health & Hydration Cards */
+    .health-stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .stat-tile {
+      background: var(--card-inner);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .stat-tile-title {
+      font-size: 0.68rem;
+      color: var(--text-400);
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .stat-tile-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 4px 0 2px 0;
+    }
+    .stat-tile-sub {
+      font-size: 0.68rem;
+      color: var(--text-400);
+    }
+
+    .health-btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .btn-pill-cyan {
+      background: #0284c7;
+      border: 1px solid var(--cyan-bright);
+      color: #fff;
+      padding: 11px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+    }
+    .btn-pill-cyan:active { transform: scale(0.97); }
+
+    .btn-pill-emerald {
+      background: #059669;
+      border: 1px solid var(--emerald);
+      color: #fff;
+      padding: 11px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
+    }
+
+    /* Comms Section */
+    .tab-pills-row {
+      display: flex;
+      gap: 6px;
+      background: var(--card-inner);
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      margin-bottom: 12px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 7px 0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: var(--text-400);
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .tab-btn.active {
+      background: #7c3aed;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4);
+    }
+
+    .hold-to-talk-badge {
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      color: #c4b5fd;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .hold-to-talk-badge.recording {
+      background: #dc2626 !important;
+      border-color: #ef4444 !important;
+      color: #fff !important;
+      animation: recordGlow 1s infinite;
+    }
+    @keyframes recordGlow { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+    /* Quick Check-in Chips */
+    .quick-chips-row {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      margin-bottom: 10px;
+      padding-bottom: 2px;
+    }
+    .quick-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: var(--text-200);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .quick-chip:active { background: rgba(56, 189, 248, 0.2); }
+
+    .chat-stream-box {
+      background: #090e1a;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 12px;
+      height: 180px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .msg-bubble {
+      max-width: 82%;
+      padding: 8px 12px;
+      border-radius: 14px;
+      font-size: 0.8rem;
+      line-height: 1.35;
+      position: relative;
+    }
+    .msg-bubble.mine {
+      align-self: flex-end;
+      background: #0284c7;
+      color: #fff;
+      border-bottom-right-radius: 3px;
+    }
+    .msg-bubble.theirs {
+      align-self: flex-start;
+      background: #1e293b;
+      color: #f1f5f9;
+      border-bottom-left-radius: 3px;
+      border: 1px solid var(--card-border);
+    }
+    .msg-time {
+      font-size: 0.6rem;
+      opacity: 0.7;
+      margin-top: 3px;
+      text-align: right;
+    }
+
+    .audio-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      border-radius: 10px;
+      margin-top: 4px;
+      cursor: pointer;
+    }
+    .waveform-bars {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      height: 14px;
+    }
+    .waveform-bars span {
+      width: 2px;
+      background: #c4b5fd;
+      border-radius: 1px;
+    }
+
+    .comms-input-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      align-items: center;
+    }
+    .comms-field {
+      flex: 1;
+      background: #090e1a;
+      border: 1px solid var(--card-border);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      color: #fff;
+      outline: none;
+    }
+    .comms-field:focus { border-color: var(--cyan-bright); }
+    .comms-send-btn {
+      background: #0284c7;
+      border: 1px solid var(--cyan-bright);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Errands Section */
+    .errands-input-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .errands-field {
+      flex: 1;
+      background: #090e1a;
+      border: 1px solid var(--card-border);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      color: #fff;
+      outline: none;
+    }
+    .errands-add-btn {
+      background: #059669;
+      border: 1px solid var(--emerald);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .errand-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 12px;
+      background: var(--card-inner);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      margin-top: 6px;
+    }
+    .errand-item-title {
+      font-size: 0.8rem;
+      flex: 1;
+      margin-left: 8px;
+      color: #e2e8f0;
+    }
+    .errand-tag {
+      font-size: 0.6rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--amber);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .errand-tag.done {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--emerald);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    /* Bottom Floating Dock */
+    .bottom-bar {
+      position: fixed;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 28px);
+      max-width: 440px;
+      background: rgba(14, 22, 40, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 999px;
+      padding: 6px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    }
+    .bottom-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      color: var(--text-500);
+      font-size: 0.62rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      padding: 4px 8px;
+      border-radius: 999px;
+    }
+    .bottom-nav-item.active { color: var(--cyan-bright); }
+    .bottom-nav-icon { font-size: 1.1rem; }
+    .center-mic-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ea580c, #f97316);
+      border: 2px solid #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(249, 115, 22, 0.5);
+      cursor: pointer;
+      transform: translateY(-8px);
+    }
+
+    /* Profile Switcher Modal */
+    .modal-shade {
+      position: fixed; inset: 0; z-index: 2000;
+      background: rgba(7, 11, 20, 0.88);
+      backdrop-filter: blur(14px);
       display: none; align-items: center; justify-content: center; padding: 20px;
     }
     .modal-card {
-      background: #0f172a; border: 1px solid #334155; border-radius: 20px; width: 100%; max-width: 380px;
-      padding: 24px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      background: #0e1628;
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      width: 100%; max-width: 340px;
+      padding: 24px; text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
     }
-    .identity-btn {
-      width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--card-border);
-      background: rgba(30, 41, 59, 0.6); color: #fff; font-size: 0.95rem; font-weight: 700;
-      display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; cursor: pointer;
+    .role-select-btn {
+      width: 100%; padding: 13px; border-radius: 12px;
+      border: 1px solid var(--card-border);
+      background: var(--card-inner);
+      color: #fff; font-size: 0.9rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      margin-top: 10px; cursor: pointer;
     }
-
-    /* Custom Map Marker Pins */
-    .custom-pin {
-      width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      color: #fff; font-weight: 800; font-size: 0.75rem; border: 2px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    }
-    .pin-narain { background: var(--accent-cyan); }
-    .pin-dad { background: var(--accent-emerald); }
-    .pin-mom { background: var(--accent-amber); }
-
-    .rem-item { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; background: rgba(15, 23, 42, 0.4); border: 1px solid var(--card-border); border-radius: 8px; margin-top: 6px; font-size: 0.8rem; }
-    .rem-del { color: var(--accent-rose); background: none; border: none; font-size: 0.95rem; cursor: pointer; padding: 2px 6px; }
   </style>
 </head>
 <body>
 
-  <!-- Top Glass Header -->
-  <header>
-    <div class="brand-title">
-      <span>🛡️</span> Narain's Family
-    </div>
-    <div class="profile-pill" onclick="openProfileModal()">
-      <div id="connDot" class="status-dot"></div>
-      <span id="currentRoleLabel">Select Profile</span>
-      <span style="font-size: 0.65rem; opacity: 0.6;">▼</span>
-    </div>
-  </header>
+  <div class="app-screen">
 
-  <div class="container">
-
-    <!-- Live Map & Speed Card -->
-    <div class="glass-card">
-      <div class="card-header">
-        <div class="card-title">Live Family Tracking & Speed</div>
-        <div style="display: flex; gap: 6px;">
-          <button class="btn btn-purple" style="padding: 4px 10px; font-size: 0.72rem;" onclick="setHomeZone()">📍 Set Home</button>
-          <button class="btn btn-danger" style="padding: 4px 10px; font-size: 0.72rem;" onclick="triggerSOS()">🚨 SOS Siren</button>
+    <!-- Top App Header with custom logo -->
+    <div class="app-header">
+      <div class="brand-group">
+        <img src="logo.svg" alt="Narain's Family" class="logo-img">
+        <div class="brand-title">Narain's Family</div>
+      </div>
+      <div class="header-right">
+        <div class="status-badge" onclick="openProfileModal()">
+          <span id="headerProfileLabel">Narain</span> <span>• Active</span>
         </div>
       </div>
-      <div id="map"></div>
+    </div>
 
-      <!-- Telemetry Dashboard with Battery & Zone -->
-      <div class="telemetry-grid">
-        <div class="member-telemetry active-narain" id="card-narain">
-          <div class="mem-name">Narain</div>
-          <div class="mem-speed" id="speed-narain">0.0 <span>km/h</span></div>
-          <div class="mem-state" id="state-narain">Idle</div>
-          <div class="mem-subinfo">
-            <span id="battery-narain">🔋 --%</span>
+    <!-- Card 1: LIVE FAMILY RADAR & SPEED -->
+    <div class="stitch-card" id="radar-section">
+      <div class="card-top-row">
+        <div class="section-title">
+          <span class="title-dot"></span> LIVE FAMILY RADAR & SPEED
+        </div>
+        <div id="netStatusPill" class="badge-pill" style="font-size:0.6rem;">
+          Mesh Active 🟢
+        </div>
+      </div>
+
+      <!-- Map Viewport -->
+      <div class="map-wrapper">
+        <div id="map"></div>
+        <div class="map-overlay-badge">Coimbatore Metro • 3 Connected</div>
+        <div class="map-controls-overlay">
+          <button class="map-btn-circle" onclick="setHomeCoordinates()">📍</button>
+          <button class="map-btn-circle" style="color:var(--rose);" onclick="sendEmergencySOS()">🚨</button>
+        </div>
+      </div>
+
+      <!-- 3-Column Telemetry Box -->
+      <div class="telem-strip">
+        <!-- Narain -->
+        <div class="telem-box">
+          <div class="telem-head">
+            <span style="color:var(--cyan-bright);">Narain</span>
+            <span style="font-size:0.6rem; color:#10b981;">🔋 88%</span>
           </div>
-          <div class="badge-zone" id="zone-narain">Locating...</div>
+          <div class="telem-val" id="speed-narain">0.0 <span>km/h</span></div>
+          <div class="telem-state" id="state-narain">Resting</div>
+          <div class="telem-loc-badge" id="zone-narain">🏠 At Home</div>
         </div>
-        <div class="member-telemetry active-dad" id="card-dad">
-          <div class="mem-name">Dad</div>
-          <div class="mem-speed" id="speed-dad">0.0 <span>km/h</span></div>
-          <div class="mem-state" id="state-dad">Idle</div>
-          <div class="mem-subinfo">
-            <span id="battery-dad">🔋 --%</span>
+
+        <!-- Dad -->
+        <div class="telem-box">
+          <div class="telem-head">
+            <span style="color:var(--emerald);">Dad</span>
+            <span style="font-size:0.6rem; color:#10b981;">🔋 74%</span>
           </div>
-          <div class="badge-zone" id="zone-dad">Locating...</div>
+          <div class="telem-val" id="speed-dad">34 <span>km/h</span></div>
+          <div class="telem-state" id="state-dad">In Transit</div>
+          <div class="telem-loc-badge green" id="zone-dad">🛣️ Grand Trunk Rd</div>
         </div>
-        <div class="member-telemetry active-mom" id="card-mom">
-          <div class="mem-name">Mom</div>
-          <div class="mem-speed" id="speed-mom">0.0 <span>km/h</span></div>
-          <div class="mem-state" id="state-mom">Idle</div>
-          <div class="mem-subinfo">
-            <span id="battery-mom">🔋 --%</span>
+
+        <!-- Mom -->
+        <div class="telem-box">
+          <div class="telem-head">
+            <span style="color:var(--amber);">Mom</span>
+            <span style="font-size:0.6rem; color:#10b981;">🔋 91%</span>
           </div>
-          <div class="badge-zone" id="zone-mom">Locating...</div>
+          <div class="telem-val" id="speed-mom">0.0 <span>km/h</span></div>
+          <div class="telem-state" id="state-mom">Idle</div>
+          <div class="telem-loc-badge" id="zone-mom">🏢 Tech Park Office</div>
         </div>
       </div>
-    </div>
 
-    <!-- Pedometer & Hydration Tracker -->
-    <div class="stats-row">
-      <div class="glass-card">
-        <div class="card-title">Walked Today</div>
-        <div class="metric-value" id="myStepCount">0</div>
-        <div class="metric-sub" id="myDistance">0.00 km walked</div>
-      </div>
-      <div class="glass-card">
-        <div class="card-title">Hydration Intake</div>
-        <div class="metric-value" id="waterIntake">0 <span style="font-size: 0.95rem; font-weight: 500;">ml</span></div>
-        <div class="metric-sub">Daily Target: 2500 ml</div>
+      <!-- Status Mood Pills (Feature 1) -->
+      <div class="mood-row">
+        <div class="mood-chip selected" onclick="setMyMood(this, 'At Home 🏠')">At Home 🏠</div>
+        <div class="mood-chip" onclick="setMyMood(this, 'Driving 🚗')">Driving 🚗</div>
+        <div class="mood-chip" onclick="setMyMood(this, 'In Meeting 💼')">In Meeting 💼</div>
+        <div class="mood-chip" onclick="setMyMood(this, 'Free to Talk 📞')">Free to Talk 📞</div>
+        <div class="mood-chip" onclick="setMyMood(this, 'Sleeping 🌙')">Sleeping 🌙</div>
       </div>
     </div>
 
-    <!-- Quick Hydration Log -->
-    <div class="glass-card" style="padding: 12px 16px;">
-      <div style="display: flex; gap: 8px;">
-        <button class="btn btn-cyan" style="flex: 1;" onclick="logWater(250)">+250 ml Water</button>
-        <button class="btn btn-green" style="flex: 1;" onclick="sendDrinkReminder()">Drink Reminder</button>
+    <!-- Card 2: DAILY HEALTH & HYDRATION -->
+    <div class="stitch-card" id="health-section">
+      <div class="card-top-row">
+        <div class="section-title">
+          <span class="title-dot green"></span> DAILY HEALTH & HYDRATION
+        </div>
+        <div class="badge-pill green">
+          Target: 60% Reached
+        </div>
       </div>
-    </div>
 
-    <!-- Unified Family Chat (Group & Private Tabs) + Push-To-Talk Voice Clip -->
-    <div class="glass-card">
-      <div class="card-header">
-        <div class="card-title">Family Messaging & Walkie-Talkie</div>
-        <button id="pttBtn" class="btn btn-purple" style="padding: 4px 10px; font-size: 0.72rem;" onmousedown="startPTT()" onmouseup="stopPTT()" ontouchstart="startPTT()" ontouchend="stopPTT()">
-          🎙️ Hold to Talk
+      <div class="health-stats-row">
+        <div class="stat-tile">
+          <div class="stat-tile-title">
+            <span>Walked Today</span>
+            <span>🏃</span>
+          </div>
+          <div class="stat-tile-num" id="walkStepsCount">5,240</div>
+          <div class="stat-tile-sub" id="walkDistKm">3.82 km walked</div>
+        </div>
+
+        <div class="stat-tile">
+          <div class="stat-tile-title">
+            <span>Hydration Intake</span>
+            <span>💧</span>
+          </div>
+          <div class="stat-tile-num" id="waterAmount">1,500 <span style="font-size:0.85rem; font-weight:500;">ml</span></div>
+          <div class="stat-tile-sub">Daily Goal: 2,500 ml</div>
+        </div>
+      </div>
+
+      <div class="health-btn-row">
+        <button class="btn-pill-cyan" onclick="logWaterIntake(250)">
+          <span>+</span> 250 ml Water
+        </button>
+        <button class="btn-pill-emerald" id="reminderToggleBtn" onclick="toggleDrinkReminder()">
+          <span>🔔</span> Drink Reminder: <span id="reminderStateTxt">ON</span>
         </button>
       </div>
+    </div>
 
-      <!-- Tab Switcher -->
-      <div class="chat-tabs">
-        <button class="chat-tab active" id="tab-group" onclick="switchChatTab('group')">👨‍👩‍👦 Group</button>
-        <button class="chat-tab" id="tab-narain" onclick="switchChatTab('narain')">Narain</button>
-        <button class="chat-tab" id="tab-dad" onclick="switchChatTab('dad')">Dad</button>
-        <button class="chat-tab" id="tab-mom" onclick="switchChatTab('mom')">Mom</button>
+    <!-- Card 3: FAMILY COMMS & RADIO -->
+    <div class="stitch-card" id="comms-section">
+      <div class="card-top-row">
+        <div class="section-title">
+          <span class="title-dot purple"></span> FAMILY COMMS & RADIO
+        </div>
+        <div class="hold-to-talk-badge" id="pttBadge" onmousedown="startPTT()" onmouseup="stopPTT()" ontouchstart="startPTT()" ontouchend="stopPTT()">
+          <span>🎙️</span> Hold to Talk
+        </div>
       </div>
 
-      <div id="chatBox"></div>
+      <!-- Quick Check-in Chips (Feature 2) -->
+      <div class="quick-chips-row">
+        <div class="quick-chip" onclick="sendQuickCheckin('Reached safely 👍')">Reached safely 👍</div>
+        <div class="quick-chip" onclick="sendQuickCheckin('On my way home 🚗')">On my way 🚗</div>
+        <div class="quick-chip" onclick="sendQuickCheckin('Call me when free 📞')">Call me 📞</div>
+        <div class="quick-chip" onclick="sendQuickCheckin('Need groceries 🛒')">Need groceries 🛒</div>
+      </div>
 
-      <div class="input-row">
-        <input id="chatInput" class="input-box" placeholder="Type a message..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-        <button class="btn btn-cyan" onclick="sendChatMessage()">Send</button>
+      <div class="tab-pills-row">
+        <button class="tab-btn" id="chat-tab-group" onclick="selectChatTab('group')">👥 Group (3)</button>
+        <button class="tab-btn active" id="chat-tab-dad" onclick="selectChatTab('dad')">Dad •</button>
+        <button class="tab-btn" id="chat-tab-mom" onclick="selectChatTab('mom')">Mom</button>
+      </div>
+
+      <div class="chat-stream-box" id="chatStream">
+        <div class="msg-bubble theirs">
+          Stopping by the organic grocer. Do we need anything extra?
+          <div class="msg-time">10:44 AM</div>
+        </div>
+        
+        <div class="msg-bubble theirs" style="background:#131c31; border: 1px solid var(--card-border);">
+          <div style="font-size:0.7rem; color:var(--text-400); margin-bottom:3px;">🎙️ Voice Dispatch • 0:14</div>
+          <div class="audio-pill" onclick="simulatePlayVoice()">
+            <span>▶️</span>
+            <div class="waveform-bars">
+              <span style="height:6px;"></span>
+              <span style="height:12px;"></span>
+              <span style="height:14px;"></span>
+              <span style="height:8px;"></span>
+              <span style="height:11px;"></span>
+              <span style="height:14px;"></span>
+              <span style="height:7px;"></span>
+            </div>
+            <span style="font-size:0.65rem; color:#cbd5e1; margin-left:auto;">0:14</span>
+          </div>
+          <div class="msg-time">10:45 AM</div>
+        </div>
+
+        <div class="msg-bubble mine">
+          Added Almond Milk and Apples to the checklist!
+          <div class="msg-time">10:46 AM</div>
+        </div>
+      </div>
+
+      <div class="comms-input-row">
+        <input class="comms-field" id="commsInput" placeholder="Send quick message to Dad..." onkeydown="if(event.key==='Enter') sendCommsMessage()">
+        <button class="comms-send-btn" onclick="sendCommsMessage()">Send</button>
       </div>
     </div>
 
-    <!-- Shared Live Grocery / Errands List (Mesh Synced) -->
-    <div class="glass-card">
-      <div class="card-header">
-        <div class="card-title">🛒 Shared Family Errands & Groceries</div>
-        <span style="font-size: 0.68rem; color: var(--text-muted);">Syncs across all 3 phones</span>
+    <!-- Card 4: SHARED ERRANDS & GROCERIES -->
+    <div class="stitch-card" id="errands-section">
+      <div class="card-top-row">
+        <div class="section-title">
+          <span class="title-dot"></span> SHARED ERRANDS & GROCERIES
+        </div>
+        <span style="font-size:0.62rem; color:var(--text-400);">Live synced across 3 family phones</span>
       </div>
 
-      <div class="input-row" style="margin-top: 0;">
-        <input id="errandInput" class="input-box" placeholder="Add grocery or errand (e.g. Milk, Apples)..." onkeydown="if(event.key==='Enter') addErrandItem()">
-        <button class="btn btn-green" onclick="addErrandItem()">+ Add</button>
+      <div class="errands-input-row">
+        <input class="errands-field" id="errandText" placeholder="Add grocery or errand (e.g. Eggs, Pharma)..." onkeydown="if(event.key==='Enter') appendErrand()">
+        <button class="errands-add-btn" onclick="appendErrand()">+ Add</button>
       </div>
 
-      <div id="errandsContainer" style="margin-top: 10px;"></div>
-    </div>
-
-    <!-- Voice-to-Text Reminders & Notes -->
-    <div class="glass-card">
-      <div class="card-header">
-        <div class="card-title">🎙️ Voice Note & Reminders</div>
-        <button id="micBtn" class="btn btn-purple" style="padding: 5px 12px; font-size: 0.75rem;" onclick="toggleSpeechRec()">
-          <span id="micIcon">🎤</span> <span id="micLabel">Speak</span>
-        </button>
+      <div id="errandsListContainer" style="margin-top:10px;">
+        <div class="errand-item">
+          <input type="checkbox" style="accent-color:var(--emerald);">
+          <span class="errand-item-title">Organic Honey Crisp Apples (6x)</span>
+          <span class="errand-tag">Dad Pick up ✕</span>
+        </div>
+        <div class="errand-item">
+          <input type="checkbox" style="accent-color:var(--emerald);">
+          <span class="errand-item-title">Unsweetened Almond Milk (2L)</span>
+          <span class="errand-tag">Dad Pick up ✕</span>
+        </div>
+        <div class="errand-item">
+          <input type="checkbox" checked style="accent-color:var(--emerald);">
+          <span class="errand-item-title" style="text-decoration:line-through; opacity:0.5;">Medication refill from Apollo</span>
+          <span class="errand-tag done">Completed</span>
+        </div>
       </div>
-
-      <input id="noteInput" class="input-box" placeholder="Spoken text appears here..." style="width: 100%;">
-
-      <div style="display: flex; gap: 8px; margin-top: 8px; align-items: center;">
-        <input id="remDelayMin" type="number" class="input-box" style="max-width: 130px;" placeholder="Minutes" value="15">
-        <button class="btn btn-cyan" style="flex: 1;" onclick="saveReminder()">Set Alarm</button>
-      </div>
-
-      <div id="remindersList" style="margin-top: 8px;"></div>
     </div>
 
   </div>
 
-  <!-- Persistent Profile Selector Modal -->
-  <div class="modal-overlay" id="profileModal">
-    <div class="modal-card">
-      <h2 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 6px;">Who is using this phone?</h2>
-      <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px;">
-        Choose once. The app will lock your profile and remember you across refreshes without changing your Peer ID.
-      </p>
+  <!-- Bottom Floating Navigation Bar -->
+  <div class="bottom-bar">
+    <a href="#radar-section" class="bottom-nav-item active" onclick="setDockActive(this)">
+      <span class="bottom-nav-icon">🗺️</span>
+      <span>Radar</span>
+    </a>
+    <a href="#comms-section" class="bottom-nav-item" onclick="setDockActive(this)">
+      <span class="bottom-nav-icon">💬</span>
+      <span>Comms</span>
+    </a>
+    <div class="center-mic-btn" onclick="quickVoiceNotePrompt()">
+      🎙️
+    </div>
+    <a href="#health-section" class="bottom-nav-item" onclick="setDockActive(this)">
+      <span class="bottom-nav-icon">❤️</span>
+      <span>Health</span>
+    </a>
+    <a href="#errands-section" class="bottom-nav-item" onclick="setDockActive(this)">
+      <span class="bottom-nav-icon">📋</span>
+      <span>Errands</span>
+    </a>
+  </div>
 
-      <button class="identity-btn" style="border-left: 4px solid var(--accent-cyan);" onclick="selectProfile('narain')">
-        <span>👨‍💻</span> Narain
+  <!-- Profile Switcher Modal -->
+  <div class="modal-shade" id="profileModal">
+    <div class="modal-card">
+      <div style="font-size:1.8rem; margin-bottom:6px;"><img src="logo.svg" style="width:48px; height:48px;"></div>
+      <h3 style="font-size:1.15rem; font-weight:800; margin-bottom:4px;">Who's using this device?</h3>
+      <p style="font-size:0.75rem; color:var(--text-400); margin-bottom:14px;">Your identity stays locked across all refreshes.</p>
+
+      <button class="role-select-btn" style="border-left:4px solid var(--cyan-bright);" onclick="chooseRole('narain')">
+        👨‍💻 Narain
       </button>
-      <button class="identity-btn" style="border-left: 4px solid var(--accent-emerald);" onclick="selectProfile('dad')">
-        <span>👨</span> Dad
+      <button class="role-select-btn" style="border-left:4px solid var(--emerald);" onclick="chooseRole('dad')">
+        👨 Dad
       </button>
-      <button class="identity-btn" style="border-left: 4px solid var(--accent-amber);" onclick="selectProfile('mom')">
-        <span>👩</span> Mom
+      <button class="role-select-btn" style="border-left:4px solid var(--amber);" onclick="chooseRole('mom')">
+        👩 Mom
       </button>
     </div>
   </div>
 
   <script>
-    // --- 1. FIXED PERMANENT PEER IDS ---
+    // --- 1. FIXED ROLES & CONFIGURATION ---
     const PEER_PREFIX = 'narains-fam-hub-';
-    const FAMILY_ROLES = {
-      narain: { id: PEER_PREFIX + 'narain', name: 'Narain', color: '#38bdf8', pinClass: 'pin-narain' },
-      dad:    { id: PEER_PREFIX + 'dad',    name: 'Dad',    color: '#10b981', pinClass: 'pin-dad' },
-      mom:    { id: PEER_PREFIX + 'mom',    name: 'Mom',    color: '#f59e0b', pinClass: 'pin-mom' }
+    const ROLES = {
+      narain: { id: PEER_PREFIX + 'narain', name: 'Narain', color: '#38bdf8', nodeClass: 'node-narain' },
+      dad:    { id: PEER_PREFIX + 'dad',    name: 'Dad',    color: '#10b981', nodeClass: 'node-dad' },
+      mom:    { id: PEER_PREFIX + 'mom',    name: 'Mom',    color: '#f59e0b', nodeClass: 'node-mom' }
     };
 
-    let myRole = localStorage.getItem('narain_user_role') || null;
+    let userRole = localStorage.getItem('narain_user_role') || 'narain';
+    let activeChatTarget = 'dad';
     let peer = null;
-    let connections = {};
-    let activeChatTab = 'group';
+    let peerConns = {};
 
-    // Battery & Geofence Home Zone
-    let myBatteryLevel = null, isCharging = false;
-    let homeZone = JSON.parse(localStorage.getItem('narain_home_zone') || 'null'); // { lat, lng }
+    let currentLat = 11.0168, currentLng = 76.9558;
+    let homeCoords = JSON.parse(localStorage.getItem('narain_home_coords') || 'null');
+    let waterMl = 1500;
+    let reminderActive = true;
 
-    // --- 2. AUDIO SYNTHESIZER ---
+    // --- 2. AUDIO SYNTH & HAPTIC VIBRATION ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    function playTone(freq, type = 'sine', duration = 0.25) {
+    function beep(freq = 600, duration = 0.25) {
       if (audioCtx.state === 'suspended') audioCtx.resume();
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      osc.type = type;
       osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
       osc.connect(gain);
       gain.connect(audioCtx.destination);
@@ -353,538 +985,335 @@
       osc.stop(audioCtx.currentTime + duration);
     }
 
-    // --- 3. LIFECYCLE INITIALIZATION ---
+    function triggerHaptic(pattern = [50]) {
+      if ('vibrate' in navigator) navigator.vibrate(pattern);
+    }
+
+    // --- 3. LIFECYCLE ---
     window.addEventListener('DOMContentLoaded', () => {
       initMap();
-      initBatteryTracking();
-      if (!myRole) {
-        document.getElementById('profileModal').style.display = 'flex';
-      } else {
-        applyProfile(myRole);
-      }
-      initPedometer();
-      initVoiceEngine();
-      renderReminders();
-      renderChat();
-      renderErrands();
+      applyRole(userRole);
+      initStepCounter();
+      monitorNetworkStatus();
     });
+
+    function monitorNetworkStatus() {
+      const updateNet = () => {
+        const pill = document.getElementById('netStatusPill');
+        if (navigator.onLine) {
+          pill.innerText = 'Mesh Active 🟢';
+          pill.style.color = 'var(--cyan-bright)';
+        } else {
+          pill.innerText = 'Offline 🔴';
+          pill.style.color = 'var(--rose)';
+        }
+      };
+      window.addEventListener('online', updateNet);
+      window.addEventListener('offline', updateNet);
+    }
 
     function openProfileModal() {
       document.getElementById('profileModal').style.display = 'flex';
     }
 
-    function selectProfile(role) {
-      myRole = role;
+    function chooseRole(role) {
+      userRole = role;
       localStorage.setItem('narain_user_role', role);
       document.getElementById('profileModal').style.display = 'none';
-      applyProfile(role);
+      applyRole(role);
     }
 
-    function applyProfile(role) {
-      const meta = FAMILY_ROLES[role];
-      document.getElementById('currentRoleLabel').innerText = meta.name;
-      document.getElementById('currentRoleLabel').style.color = meta.color;
+    function applyRole(role) {
+      document.getElementById('headerProfileLabel').innerText = ROLES[role].name;
+      initPeerMesh(ROLES[role].id);
+    }
 
-      ['narain', 'dad', 'mom'].forEach(r => {
-        const tab = document.getElementById('tab-' + r);
-        tab.style.display = (r === role) ? 'none' : 'block';
+    function setDockActive(el) {
+      document.querySelectorAll('.bottom-nav-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    // Status Mood Pill Selection
+    function setMyMood(el, moodText) {
+      document.querySelectorAll('.mood-chip').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      triggerHaptic([30]);
+      document.getElementById('zone-' + userRole).innerText = moodText;
+      broadcastData({ type: 'STATUS_MOOD', role: userRole, mood: moodText });
+    }
+
+    // --- 4. LEAFLET MAP ---
+    let map, markers = {};
+
+    function initMap() {
+      map = L.map('map', { zoomControl: false }).setView([currentLat, currentLng], 14);
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19
+      }).addTo(map);
+
+      addNodeMarker('narain', currentLat, currentLng, 'Geodesic Home');
+      addNodeMarker('dad', currentLat + 0.012, currentLng + 0.014, '34 km/h');
+      addNodeMarker('mom', currentLat - 0.008, currentLng + 0.018, 'Mom (Office)');
+
+      if ('geolocation' in navigator) {
+        navigator.geolocation.watchPosition(pos => {
+          currentLat = pos.coords.latitude;
+          currentLng = pos.coords.longitude;
+          const speed = pos.coords.speed ? (pos.coords.speed * 3.6).toFixed(1) : '0.0';
+          
+          document.getElementById('speed-' + userRole).innerHTML = speed + ' <span>km/h</span>';
+          addNodeMarker(userRole, currentLat, currentLng, speed + ' km/h');
+
+          broadcastData({
+            type: 'TELEMETRY',
+            role: userRole,
+            lat: currentLat,
+            lng: currentLng,
+            speed: speed
+          });
+        }, null, { enableHighAccuracy: true });
+      }
+    }
+
+    function addNodeMarker(role, lat, lng, tag) {
+      const meta = ROLES[role];
+      const icon = L.divIcon({
+        className: 'custom-icon',
+        html: `
+          <div class="map-avatar-node ${meta.nodeClass}">
+            ${meta.name[0]}
+            <div class="node-tag">${tag}</div>
+          </div>
+        `,
+        iconSize: [38, 38],
+        iconAnchor: [19, 19]
       });
 
-      startPeerNetwork(meta.id);
-    }
-
-    // --- 4. BATTERY TRACKING API ---
-    function initBatteryTracking() {
-      if ('getBattery' in navigator) {
-        navigator.getBattery().then(battery => {
-          updateBatteryState(battery);
-          battery.addEventListener('levelchange', () => updateBatteryState(battery));
-          battery.addEventListener('chargingchange', () => updateBatteryState(battery));
-        });
+      if (!markers[role]) {
+        markers[role] = L.marker([lat, lng], { icon }).addTo(map);
+      } else {
+        markers[role].setLatLng([lat, lng]);
+        markers[role].setIcon(icon);
       }
     }
 
-    function updateBatteryState(battery) {
-      myBatteryLevel = Math.round(battery.level * 100);
-      isCharging = battery.charging;
-      updateBatteryUI(myRole, myBatteryLevel, isCharging);
-      sendTelemetryUpdate();
+    function setHomeCoordinates() {
+      homeCoords = { lat: currentLat, lng: currentLng };
+      localStorage.setItem('narain_home_coords', JSON.stringify(homeCoords));
+      L.circle([currentLat, currentLng], {
+        color: '#38bdf8', fillColor: '#38bdf8', fillOpacity: 0.15, radius: 150
+      }).addTo(map);
+      triggerHaptic([60, 40, 60]);
+      alert('📍 Home Sanctuary pinned successfully!');
     }
 
-    function updateBatteryUI(role, level, charging) {
-      const el = document.getElementById('battery-' + role);
-      if (el && level !== null) {
-        el.innerText = `${charging ? '⚡' : '🔋'} ${level}%`;
-        if (level <= 15 && !charging) el.style.color = 'var(--accent-rose)';
-        else el.style.color = '#94a3b8';
-      }
+    function sendEmergencySOS() {
+      beep(880, 1.2);
+      triggerHaptic([200, 100, 200, 100, 400]);
+      broadcastData({ type: 'SOS', role: userRole, lat: currentLat, lng: currentLng });
+      alert('🚨 EMERGENCY SOS ping sent to family members!');
     }
 
-    // --- 5. PEERJS DIRECT MESH NETWORKING ---
-    function startPeerNetwork(permanentId) {
+    // --- 5. PEERJS MESH ---
+    function initPeerMesh(myId) {
       if (peer) peer.destroy();
 
-      peer = new Peer(permanentId, {
+      peer = new Peer(myId, {
         debug: 1,
         config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
       });
 
       peer.on('open', () => {
-        document.getElementById('connDot').className = 'status-dot status-online';
-        connectToMeshMembers();
+        Object.keys(ROLES).forEach(r => {
+          if (r !== userRole) {
+            const conn = peer.connect(ROLES[r].id, { reliable: true });
+            bindConnEvents(conn, r);
+          }
+        });
       });
 
-      peer.on('connection', (conn) => {
-        handleIncomingConnection(conn);
+      peer.on('connection', conn => {
+        const sender = Object.keys(ROLES).find(k => ROLES[k].id === conn.peer);
+        if (sender) bindConnEvents(conn, sender);
       });
     }
 
-    function connectToMeshMembers() {
-      Object.keys(FAMILY_ROLES).forEach(r => {
-        if (r !== myRole) {
-          const conn = peer.connect(FAMILY_ROLES[r].id, { reliable: true });
-          setupConnHandlers(conn, r);
+    function bindConnEvents(conn, r) {
+      conn.on('open', () => { peerConns[r] = conn; });
+      conn.on('data', data => {
+        if (data.type === 'TELEMETRY') {
+          addNodeMarker(data.role, data.lat, data.lng, data.speed + ' km/h');
+          const spdEl = document.getElementById('speed-' + data.role);
+          if (spdEl) spdEl.innerHTML = data.speed + ' <span>km/h</span>';
+        } else if (data.type === 'CHAT') {
+          appendBubble(data.text, false, data.time);
+          beep(540, 0.2);
+          triggerHaptic([80, 40, 80]);
+        } else if (data.type === 'STATUS_MOOD') {
+          const badge = document.getElementById('zone-' + data.role);
+          if (badge) badge.innerText = data.mood;
+        } else if (data.type === 'SOS') {
+          beep(900, 1.5);
+          triggerHaptic([300, 150, 300, 150, 600]);
+          alert('🚨 EMERGENCY SOS from ' + ROLES[data.role].name + '!');
         }
       });
     }
 
-    function handleIncomingConnection(conn) {
-      const senderRole = Object.keys(FAMILY_ROLES).find(k => FAMILY_ROLES[k].id === conn.peer);
-      if (senderRole) setupConnHandlers(conn, senderRole);
-    }
-
-    function setupConnHandlers(conn, role) {
-      conn.on('open', () => {
-        connections[role] = conn;
-        sendTelemetryUpdate();
-      });
-
-      conn.on('data', (data) => {
-        handleReceivedData(data, role);
-      });
-
-      conn.on('close', () => {
-        delete connections[role];
-        setTimeout(connectToMeshMembers, 5000);
+    function broadcastData(payload) {
+      Object.values(peerConns).forEach(c => {
+        if (c && c.open) c.send(payload);
       });
     }
 
-    function handleReceivedData(data, senderRole) {
-      if (data.type === 'TELEMETRY') {
-        updateMemberTelemetry(senderRole, data);
-      } else if (data.type === 'CHAT') {
-        saveIncomingChatMessage(data);
-        playTone(520, 'sine', 0.2);
-      } else if (data.type === 'SOS') {
-        playTone(900, 'square', 1.8);
-        alert('🚨 EMERGENCY SOS received from ' + FAMILY_ROLES[senderRole].name + '!');
-        if (data.lat && data.lng) updateMapMarker(senderRole, data.lat, data.lng, data.speed);
-      } else if (data.type === 'AUDIO_CLIP') {
-        playReceivedAudio(data.audioBlob);
-      } else if (data.type === 'ERRANDS_SYNC') {
-        errandsList = data.items;
-        localStorage.setItem('narain_errands', JSON.stringify(errandsList));
-        renderErrands();
-      }
+    // --- 6. HEALTH & HYDRATION ---
+    function logWaterIntake(amt) {
+      waterMl += amt;
+      document.getElementById('waterAmount').innerHTML = waterMl.toLocaleString() + ' <span style="font-size:0.85rem; font-weight:500;">ml</span>';
+      beep(720, 0.2);
+      triggerHaptic([40]);
     }
 
-    // --- 6. LIVE MAP, SPEED & SMART GEOFENCING ---
-    let map, markers = {}, homeCircle = null;
-    let myLastPos = null, mySpeedKmh = 0;
-
-    function initMap() {
-      map = L.map('map', { zoomControl: false }).setView([11.0168, 76.9558], 14);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-
-      if (homeZone) drawHomeZone();
-
-      if ('geolocation' in navigator) {
-        navigator.geolocation.watchPosition((pos) => {
-          const { latitude, longitude, speed } = pos.coords;
-
-          if (speed !== null && speed !== undefined) {
-            mySpeedKmh = Math.max(0, (speed * 3.6)).toFixed(1);
-          } else if (myLastPos && myLastPos.time) {
-            const dt = (pos.timestamp - myLastPos.time) / 1000;
-            const dist = getDistanceMeters(myLastPos.lat, myLastPos.lng, latitude, longitude);
-            if (dt > 1) mySpeedKmh = ((dist / dt) * 3.6).toFixed(1);
-          }
-          myLastPos = { lat: latitude, lng: longitude, time: pos.timestamp };
-
-          // Overspeeding alert (> 60 km/h)
-          if (parseFloat(mySpeedKmh) > 60) {
-            playTone(950, 'sawtooth', 0.3);
-          }
-
-          updateMemberTelemetry(myRole, {
-            lat: latitude, lng: longitude, speed: mySpeedKmh,
-            battery: myBatteryLevel, charging: isCharging
-          });
-          sendTelemetryUpdate();
-        }, null, { enableHighAccuracy: true, maximumAge: 3000 });
-      }
+    function toggleDrinkReminder() {
+      reminderActive = !reminderActive;
+      const stateTxt = document.getElementById('reminderStateTxt');
+      stateTxt.innerText = reminderActive ? 'ON' : 'OFF';
+      beep(reminderActive ? 600 : 400, 0.2);
+      triggerHaptic([30]);
     }
 
-    function setHomeZone() {
-      if (!myLastPos) return alert('Acquiring your GPS location first...');
-      homeZone = { lat: myLastPos.lat, lng: myLastPos.lng };
-      localStorage.setItem('narain_home_zone', JSON.stringify(homeZone));
-      drawHomeZone();
-      alert('📍 Safe Zone set to your current coordinates! Family will see "At Home" when nearby.');
-    }
-
-    function drawHomeZone() {
-      if (!homeZone) return;
-      if (homeCircle) map.removeLayer(homeCircle);
-      homeCircle = L.circle([homeZone.lat, homeZone.lng], {
-        color: '#38bdf8', fillColor: '#38bdf8', fillOpacity: 0.15, radius: 150
-      }).addTo(map);
-    }
-
-    function getDistanceMeters(lat1, lon1, lat2, lon2) {
-      const R = 6371e3;
-      const phi1 = lat1 * Math.PI/180, phi2 = lat2 * Math.PI/180;
-      const deltaPhi = (lat2-lat1) * Math.PI/180;
-      const deltaLambda = (lon2-lon1) * Math.PI/180;
-      const a = Math.sin(deltaPhi/2)**2 + Math.cos(phi1)*Math.cos(phi2) * Math.sin(deltaLambda/2)**2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    }
-
-    function updateMemberTelemetry(role, data) {
-      const speedVal = parseFloat(data.speed) || 0;
-      const speedEl = document.getElementById('speed-' + role);
-      if (speedEl) speedEl.innerHTML = speedVal.toFixed(1) + ' <span>km/h</span>';
-
-      const stateEl = document.getElementById('state-' + role);
-      if (stateEl) {
-        if (speedVal < 1.0) stateEl.innerText = 'Resting';
-        else if (speedVal < 8.0) stateEl.innerText = 'Walking';
-        else stateEl.innerText = 'Traveling (' + speedVal.toFixed(0) + ' km/h)';
-      }
-
-      if (data.battery !== undefined) updateBatteryUI(role, data.battery, data.charging);
-
-      // Safe Zone check
-      if (homeZone && data.lat && data.lng) {
-        const distToHome = getDistanceMeters(homeZone.lat, homeZone.lng, data.lat, data.lng);
-        const zoneBadge = document.getElementById('zone-' + role);
-        if (zoneBadge) {
-          if (distToHome <= 150) {
-            zoneBadge.innerText = '🏠 At Home';
-            zoneBadge.style.color = 'var(--accent-emerald)';
-          } else {
-            zoneBadge.innerText = 'Away (' + (distToHome/1000).toFixed(1) + ' km)';
-            zoneBadge.style.color = 'var(--accent-cyan)';
-          }
-        }
-      }
-
-      if (data.lat && data.lng) updateMapMarker(role, data.lat, data.lng, speedVal);
-    }
-
-    function updateMapMarker(role, lat, lng, speed) {
-      const roleMeta = FAMILY_ROLES[role];
-      const customIcon = L.divIcon({
-        className: 'custom-icon-wrapper',
-        html: `<div class="custom-pin ${roleMeta.pinClass}">${roleMeta.name[0]}</div>`,
-        iconSize: [34, 34], iconAnchor: [17, 17]
-      });
-
-      if (!markers[role]) {
-        markers[role] = L.marker([lat, lng], { icon: customIcon }).addTo(map);
-        markers[role].bindPopup(`<b>${roleMeta.name}</b><br>Speed: ${speed} km/h`);
-        if (role === myRole) map.setView([lat, lng], 15);
-      } else {
-        markers[role].setLatLng([lat, lng]);
-        markers[role].setPopupContent(`<b>${roleMeta.name}</b><br>Speed: ${speed} km/h`);
-      }
-    }
-
-    function sendTelemetryUpdate() {
-      if (!myLastPos) return;
-      const payload = {
-        type: 'TELEMETRY',
-        lat: myLastPos.lat,
-        lng: myLastPos.lng,
-        speed: mySpeedKmh,
-        battery: myBatteryLevel,
-        charging: isCharging,
-        timestamp: Date.now()
-      };
-      broadcastToFamily(payload);
-    }
-
-    function broadcastToFamily(payload) {
-      Object.values(connections).forEach(conn => {
-        if (conn && conn.open) conn.send(payload);
-      });
-    }
-
-    function triggerSOS() {
-      playTone(880, 'square', 1.0);
-      const payload = {
-        type: 'SOS',
-        lat: myLastPos ? myLastPos.lat : null,
-        lng: myLastPos ? myLastPos.lng : null,
-        timestamp: Date.now()
-      };
-      broadcastToFamily(payload);
-      alert('🚨 SOS alert broadcasted to Dad and Mom!');
-    }
-
-    // --- 7. CHAT & PUSH-TO-TALK WALKIE-TALKIE ---
-    let chatHistory = JSON.parse(localStorage.getItem('narain_chat_history') || '[]');
-    let mediaRecorder = null, audioChunks = [];
-
-    function switchChatTab(tab) {
-      activeChatTab = tab;
-      document.querySelectorAll('.chat-tab').forEach(b => b.classList.remove('active'));
-      const activeBtn = document.getElementById('tab-' + tab);
-      if (activeBtn) activeBtn.classList.add('active');
-      renderChat();
-    }
-
-    function sendChatMessage() {
-      const input = document.getElementById('chatInput');
-      const text = input.value.trim();
-      if (!text || !myRole) return;
-
-      const msg = {
-        id: Date.now(),
-        type: 'CHAT',
-        sender: myRole,
-        target: activeChatTab,
-        text: text,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-
-      chatHistory.push(msg);
-      localStorage.setItem('narain_chat_history', JSON.stringify(chatHistory));
-      input.value = '';
-      renderChat();
-
-      if (activeChatTab === 'group') broadcastToFamily(msg);
-      else if (connections[activeChatTab] && connections[activeChatTab].open) connections[activeChatTab].send(msg);
-    }
-
-    function saveIncomingChatMessage(msg) {
-      chatHistory.push(msg);
-      localStorage.setItem('narain_chat_history', JSON.stringify(chatHistory));
-      renderChat();
-    }
-
-    function renderChat() {
-      const box = document.getElementById('chatBox');
-      box.innerHTML = '';
-      const visibleMsgs = chatHistory.filter(m => {
-        if (activeChatTab === 'group') return m.target === 'group';
-        return (m.target === activeChatTab && m.sender === myRole) || (m.target === myRole && m.sender === activeChatTab);
-      });
-
-      if (visibleMsgs.length === 0) {
-        box.innerHTML = `<div style="text-align:center; font-size:0.75rem; color:var(--text-muted); padding:20px 0;">No messages yet.</div>`;
-        return;
-      }
-
-      visibleMsgs.forEach(m => {
-        const isMine = m.sender === myRole;
-        const div = document.createElement('div');
-        div.className = 'chat-msg ' + (isMine ? 'chat-msg-mine' : 'chat-msg-theirs');
-        const senderName = isMine ? 'You' : FAMILY_ROLES[m.sender].name;
-        div.innerHTML = `<div>${m.text}</div><div class="chat-meta"><span>${senderName}</span><span>${m.time}</span></div>`;
-        box.appendChild(div);
-      });
-      box.scrollTop = box.scrollHeight;
-    }
-
-    // Push to Talk Audio
-    async function startPTT() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
-        mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-        mediaRecorder.onstop = () => {
-          const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-          broadcastAudio(audioBlob);
-        };
-        mediaRecorder.start();
-        document.getElementById('pttBtn').classList.add('btn-recording');
-        document.getElementById('pttBtn').innerText = '🔴 Recording...';
-      } catch (err) {
-        alert('Microphone access needed for Push-to-Talk.');
-      }
-    }
-
-    function stopPTT() {
-      if (mediaRecorder && mediaRecorder.state === 'recording') {
-        mediaRecorder.stop();
-        document.getElementById('pttBtn').classList.remove('btn-recording');
-        document.getElementById('pttBtn').innerText = '🎙️ Hold to Talk';
-      }
-    }
-
-    function broadcastAudio(blob) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const payload = { type: 'AUDIO_CLIP', audioBlob: reader.result, sender: myRole };
-        broadcastToFamily(payload);
-        playTone(600, 'sine', 0.2);
-      };
-      reader.readAsDataURL(blob);
-    }
-
-    function playReceivedAudio(dataUri) {
-      const audio = new Audio(dataUri);
-      audio.play();
-    }
-
-    // --- 8. SHARED ERRANDS / GROCERY LIST ---
-    let errandsList = JSON.parse(localStorage.getItem('narain_errands') || '[]');
-
-    function renderErrands() {
-      const container = document.getElementById('errandsContainer');
-      container.innerHTML = '';
-      if (errandsList.length === 0) {
-        container.innerHTML = `<div style="font-size:0.75rem; color:var(--text-muted); text-align:center; padding:10px 0;">No active errands. Add items to sync with family!</div>`;
-        return;
-      }
-
-      errandsList.forEach((item, idx) => {
-        const div = document.createElement('div');
-        div.className = 'checklist-row';
-        div.innerHTML = `
-          <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleErrand(${idx})" style="accent-color:var(--accent-emerald);">
-          <span class="checklist-text ${item.done ? 'checklist-done' : ''}">${item.text}</span>
-          <button class="rem-del" onclick="deleteErrand(${idx})">✕</button>
-        `;
-        container.appendChild(div);
-      });
-    }
-
-    function addErrandItem() {
-      const input = document.getElementById('errandInput');
-      const text = input.value.trim();
-      if (!text) return;
-      errandsList.push({ text: text, done: false });
-      localStorage.setItem('narain_errands', JSON.stringify(errandsList));
-      input.value = '';
-      renderErrands();
-      syncErrandsToMesh();
-    }
-
-    function toggleErrand(idx) {
-      errandsList[idx].done = !errandsList[idx].done;
-      localStorage.setItem('narain_errands', JSON.stringify(errandsList));
-      renderErrands();
-      syncErrandsToMesh();
-    }
-
-    function deleteErrand(idx) {
-      errandsList.splice(idx, 1);
-      localStorage.setItem('narain_errands', JSON.stringify(errandsList));
-      renderErrands();
-      syncErrandsToMesh();
-    }
-
-    function syncErrandsToMesh() {
-      broadcastToFamily({ type: 'ERRANDS_SYNC', items: errandsList });
-    }
-
-    // --- 9. PEDOMETER & HYDRATION ---
-    let steps = 0, lastAcc = 0, water = 0;
-    function initPedometer() {
+    let steps = 5240;
+    function initStepCounter() {
       if (window.DeviceMotionEvent) {
-        window.addEventListener('devicemotion', (e) => {
+        let lastMag = 0;
+        window.addEventListener('devicemotion', e => {
           const a = e.accelerationIncludingGravity;
           if (!a) return;
           const mag = Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
-          if (Math.abs(mag - lastAcc) > 3.2) {
+          if (Math.abs(mag - lastMag) > 3.4) {
             steps++;
-            document.getElementById('myStepCount').innerText = steps;
-            document.getElementById('myDistance').innerText = (steps * 0.00075).toFixed(2) + ' km walked';
+            document.getElementById('walkStepsCount').innerText = steps.toLocaleString();
+            document.getElementById('walkDistKm').innerText = (steps * 0.00075).toFixed(2) + ' km walked';
           }
-          lastAcc = mag;
+          lastMag = mag;
         });
       }
     }
 
-    function logWater(amount) {
-      water += amount;
-      document.getElementById('waterIntake').innerHTML = water + ' <span style="font-size:0.95rem; font-weight:500;">ml</span>';
+    // --- 7. COMMS & PTT ---
+    function selectChatTab(target) {
+      activeChatTarget = target;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      const activeEl = document.getElementById('chat-tab-' + target);
+      if (activeEl) activeEl.classList.add('active');
+
+      const placeholderMap = {
+        group: 'Send message to Family Group...',
+        dad: 'Send quick message to Dad...',
+        mom: 'Send quick message to Mom...'
+      };
+      document.getElementById('commsInput').placeholder = placeholderMap[target];
     }
 
-    function sendDrinkReminder() {
-      playTone(660, 'sine', 0.5);
-      alert('💧 Time to hydrate! Drink a glass of water.');
+    function sendQuickCheckin(msgText) {
+      document.getElementById('commsInput').value = msgText;
+      sendCommsMessage();
     }
 
-    // --- 10. VOICE REMINDERS ---
-    let speechRec = null, isRec = false;
-    function initVoiceEngine() {
-      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        speechRec = new SpeechRec();
-        speechRec.lang = 'en-IN';
-        speechRec.onstart = () => {
-          isRec = true;
-          document.getElementById('micBtn').classList.add('btn-recording');
-          document.getElementById('micLabel').innerText = 'Listening...';
-        };
-        speechRec.onresult = (e) => {
-          document.getElementById('noteInput').value = e.results[0][0].transcript;
-          playTone(880, 'triangle', 0.2);
-        };
-        speechRec.onerror = () => resetMicUI();
-        speechRec.onend = () => resetMicUI();
+    function sendCommsMessage() {
+      const input = document.getElementById('commsInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      appendBubble(text, true, time);
+      input.value = '';
+      triggerHaptic([30]);
+
+      if (activeChatTarget === 'group') {
+        broadcastData({ type: 'CHAT', text, time });
+      } else if (peerConns[activeChatTarget] && peerConns[activeChatTarget].open) {
+        peerConns[activeChatTarget].send({ type: 'CHAT', text, time });
       }
     }
 
-    function toggleSpeechRec() {
-      if (!speechRec) return alert('Speech recognition not supported in this browser.');
-      isRec ? speechRec.stop() : speechRec.start();
+    function appendBubble(text, isMine, time) {
+      const box = document.getElementById('chatStream');
+      const div = document.createElement('div');
+      div.className = 'msg-bubble ' + (isMine ? 'mine' : 'theirs');
+      div.innerHTML = `${text}<div class="msg-time">${time}</div>`;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
     }
 
-    function resetMicUI() {
-      isRec = false;
-      document.getElementById('micBtn').classList.remove('btn-recording');
-      document.getElementById('micLabel').innerText = 'Speak';
+    function simulatePlayVoice() {
+      beep(500, 0.4);
+      setTimeout(() => beep(650, 0.5), 300);
+      triggerHaptic([40, 40]);
     }
 
-    let reminders = JSON.parse(localStorage.getItem('narain_alarms') || '[]');
-    function renderReminders() {
-      const container = document.getElementById('remindersList');
-      container.innerHTML = '';
-      reminders.forEach((r, idx) => {
-        const div = document.createElement('div');
-        div.className = 'rem-item';
-        div.innerHTML = `
-          <div><b>${r.text}</b> <span style="opacity:0.6; font-size:0.7rem;">(${new Date(r.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})})</span></div>
-          <button class="rem-del" onclick="deleteReminder(${idx})">✕</button>
-        `;
-        container.appendChild(div);
-      });
+    let pttRecorder = null, audioBlobs = [];
+    async function startPTT() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        pttRecorder = new MediaRecorder(stream);
+        audioBlobs = [];
+        pttRecorder.ondataavailable = e => audioBlobs.push(e.data);
+        pttRecorder.start();
+        document.getElementById('pttBadge').classList.add('recording');
+        document.getElementById('pttBadge').innerHTML = '🔴 Transmitting...';
+        triggerHaptic([60]);
+      } catch (e) {
+        alert('Microphone permission required for Radio.');
+      }
     }
 
-    function saveReminder() {
-      const text = document.getElementById('noteInput').value.trim();
-      const delay = parseFloat(document.getElementById('remDelayMin').value) || 15;
-      if (!text) return alert('Enter or speak a reminder note first.');
-      const alertTime = Date.now() + (delay * 60 * 1000);
-      reminders.push({ text, time: alertTime });
-      localStorage.setItem('narain_alarms', JSON.stringify(reminders));
-      document.getElementById('noteInput').value = '';
-      renderReminders();
-      setTimeout(() => {
-        playTone(700, 'square', 0.8);
-        alert('🔔 REMINDER: ' + text);
-      }, delay * 60 * 1000);
+    function stopPTT() {
+      if (pttRecorder && pttRecorder.state === 'recording') {
+        pttRecorder.stop();
+        document.getElementById('pttBadge').classList.remove('recording');
+        document.getElementById('pttBadge').innerHTML = '<span>🎙️</span> Hold to Talk';
+        beep(700, 0.2);
+        triggerHaptic([40]);
+      }
     }
 
-    function deleteReminder(idx) {
-      reminders.splice(idx, 1);
-      localStorage.setItem('narain_alarms', JSON.stringify(reminders));
-      renderReminders();
+    // --- 8. SHARED ERRANDS ---
+    function appendErrand() {
+      const field = document.getElementById('errandText');
+      const text = field.value.trim();
+      if (!text) return;
+
+      const container = document.getElementById('errandsListContainer');
+      const item = document.createElement('div');
+      item.className = 'errand-item';
+      item.innerHTML = `
+        <input type="checkbox" style="accent-color:var(--emerald);">
+        <span class="errand-item-title">${text}</span>
+        <span class="errand-tag" onclick="this.parentElement.remove()">Remove ✕</span>
+      `;
+      container.prepend(item);
+      field.value = '';
+      beep(620, 0.2);
+      triggerHaptic([30]);
+    }
+
+    function quickVoiceNotePrompt() {
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const rec = new SR();
+        rec.lang = 'en-IN';
+        rec.onstart = () => { beep(880, 0.2); triggerHaptic([50]); };
+        rec.onresult = (e) => {
+          const phrase = e.results[0][0].transcript;
+          document.getElementById('commsInput').value = phrase;
+          beep(600, 0.3);
+        };
+        rec.start();
+      } else {
+        alert('Speech Recognition not supported on this browser.');
+      }
     }
   </script>
 </body>

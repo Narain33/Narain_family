@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#050811"/>
+    </radialGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="coreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+    <filter id="glowEffect" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Base App Tile Background -->
+  <rect width="512" height="512" rx="120" fill="url(#bgGlow)"/>
+  <rect width="504" height="504" x="4" y="4" rx="116" fill="none" stroke="rgba(56, 189, 248, 0.2)" stroke-width="3"/>
+
+  <!-- Outer Interconnected Orbit Ring -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="rgba(56, 189, 248, 0.15)" stroke-width="4" stroke-dasharray="10 14"/>
+
+  <!-- Geometric Minimalist Shield Silhouette -->
+  <path d="M 256 95 L 370 145 C 370 270 256 375 256 375 C 256 375 142 270 142 145 Z" 
+        fill="none" stroke="url(#shieldGrad)" stroke-width="14" stroke-linejoin="round" filter="url(#glowEffect)"/>
+
+  <!-- Family Mesh Nodes (3 Dots for Narain, Dad, Mom) -->
+  <!-- Top / Central Node (Narain) -->
+  <circle cx="256" cy="180" r="18" fill="#38bdf8" filter="url(#glowEffect)"/>
+  
+  <!-- Bottom Left Node (Dad) -->
+  <circle cx="205" cy="275" r="16" fill="#10b981" filter="url(#glowEffect)"/>
+  
+  <!-- Bottom Right Node (Mom) -->
+  <circle cx="307" cy="275" r="16" fill="#f59e0b" filter="url(#glowEffect)"/>
+
+  <!-- Connecting Interlink Vectors -->
+  <line x1="256" y1="180" x2="205" y2="275" stroke="rgba(255, 255, 255, 0.6)" stroke-width="4" stroke-linecap="round"/>
+  <line x1="256" y1="180" x2="307" y2="275" stroke="rgba(255, 255, 255, 0.6)" stroke-width="4" stroke-linecap="round"/>
+  <line x1="205" y1="275" x2="307" y2="275" stroke="rgba(255, 255, 255, 0.6)" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Central Pulse Ring -->
+  <circle cx="256" cy="245" r="7" fill="#ffffff" filter="url(#glowEffect)"/>
+</svg>
